@@ -1,8 +1,8 @@
 local shambles ={
     workspace = "shambles haxx",
-    game = "Developer",
+    game = "Universal",
     version = "2.2.1a",
-    username = "office",
+    username = "developer",
 }
 
 local PLRDS = {}
@@ -121,9 +121,9 @@ local Crosshair = {
     Top = Ut.New({type = "Line"}),
     Bottom = Ut.New({type = "Line"}),
 }
-local Library                   = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/UI/UI.lua?token=GHSAT0AAAAAAB2IVB75TALCO3T6TK2WC3YSY4USC7Q"))()
-local ThemeManager              = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Theme%20Manager.lua?token=GHSAT0AAAAAAB2IVB7533P657KUW37OD6EIY4USDIQ"))()
-local SaveManager               = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Configuration%20Manager.lua?token=GHSAT0AAAAAAB2IVB74ERE75B5RRVEM7D2QY4USDNA"))()
+local Library                   = loadstring(readfile("shambles haxx/libraries/UI/UI.lua"))()
+local ThemeManager              = loadstring(readfile("shambles haxx/libraries/Managers/Theme Manager.lua"))()
+local SaveManager               = loadstring(readfile("shambles haxx/libraries/Managers/Configuration Manager.lua"))()
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new
@@ -384,6 +384,10 @@ Extra:AddButton('Join New Game', function()
     end
 end)
 
+if not isfolder(shambles.workspace .."/Configs") then
+    makefolder(shambles.workspace .."/Configs")
+end
+
 local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
 
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
@@ -395,7 +399,7 @@ SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings() 
 SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
 ThemeManager:SetFolder(shambles.workspace)
-SaveManager:SetFolder(shambles.workspace .."/"..shambles.game)
+SaveManager:SetFolder(shambles.workspace .."/Configs/"..shambles.game)
 SaveManager:BuildConfigSection(Tabs['Settings']) 
 ThemeManager:ApplyToTab(Tabs['Settings'])
 
