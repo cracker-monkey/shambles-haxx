@@ -1,3 +1,5 @@
 # shambles-haxx
 
-developed by office, j. and cracker monkey.
+Utility tool for Roblox
+---
+developed by office, J. and cracker monkey.
