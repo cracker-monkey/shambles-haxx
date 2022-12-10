@@ -122,7 +122,7 @@ local Crosshair = {
     Bottom = Ut.New({type = "Line"}),
 }
 
-local Library                   = loadstring(game:HttpGet('https://raw.githubusercontent.com/senpaioffice132/Shambles-Haxx/main/Library.lua'))()
+local Library                   = getgenv().Library
 
 local INST                      = Instance.new
 local V2                        = Vector2.new

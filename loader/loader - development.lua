@@ -8,8 +8,9 @@ local function printc(text)
     end
 end
 
-getgenv().ThemeManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/ThemeManager.lua'))()
-getgenv().SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/SaveManager.lua'))()
+getgenv().Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/UI/UI.lua?token=GHSAT0AAAAAAB2IVB756I7LJA6XGNZLU3G2Y4UQX6A"))()
+getgenv().ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Theme%20Manager.lua?token=GHSAT0AAAAAAB2IVB75PKX6DXDQPRCCTO5QY4UQYJQ"))()
+getgenv().SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Configuration%20Manager.lua?token=GHSAT0AAAAAAB2IVB75HZZLECLOTYPHXCT4Y4UQYPQ"))()
 
 printc("Hello developer to shambles haxx!")
 
