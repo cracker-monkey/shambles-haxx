@@ -8,6 +8,14 @@ local function printc(text)
     end
 end
 
+local function execute(path)
+    if Square.new() then
+        loadstring(loadfile(path))()
+    else
+        loadstring(readfile(path))()
+    end
+end
+
 loadstring(readfile("shambles haxx/globals/information.lua"))()
 
 local username = getgenv().username
@@ -15,7 +23,7 @@ local username = getgenv().username
 printc("Welcome, ".. username .." to shambles haxx!")
 
 if PlaceId == 299659045 or PlaceId == 292439477 then
-    loadstring(readfile("shambles haxx/games/phantom-forces/development/core/source.lua"))()
+    execute("shambles haxx/games/phantom-forces/development/core/source.lua")
 else
-    loadstring(readfile("shambles haxx/games/universal/development/core/source.lua"))()
+    execute("shambles haxx/games/universal/development/core/source.lua")
 end
