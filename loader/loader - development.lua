@@ -9,14 +9,19 @@ local function printc(text)
 end
 
 local function execute(path)
-    if Square.new() then
+    if syn and syn.is_beta then
         loadstring(loadfile(path))()
     else
         loadstring(readfile(path))()
     end
 end
 
-loadstring(readfile("shambles haxx/globals/information.lua"))()
+execute("shambles haxx/globals/information.lua")
+execute("shambles haxx/websockets/main.lua")
+
+getgenv().Library = execute("shambles haxx/libraries/UI/UI.lua")
+getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua")
+getgenv().SaveManager = execute("shambles haxx/libraries/Managers/Configuration Manager.lua")
 
 local username = getgenv().username
 

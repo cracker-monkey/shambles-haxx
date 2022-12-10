@@ -121,9 +121,10 @@ local Crosshair = {
     Top = Ut.New({type = "Line"}),
     Bottom = Ut.New({type = "Line"}),
 }
-local Library                   = loadstring(readfile("shambles haxx/libraries/UI/UI.lua"))()
-local ThemeManager              = loadstring(readfile("shambles haxx/libraries/Managers/Theme Manager.lua"))()
-local SaveManager               = loadstring(readfile("shambles haxx/libraries/Managers/Configuration Manager.lua"))()
+
+local Library                   = getgenv().Library
+local ThemeManager              = getgenv().ThemeManager
+local SaveManager               = getgenv().SaveManager
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new

@@ -122,8 +122,9 @@ local Crosshair = {
     Bottom = Ut.New({type = "Line"}),
 }
 
-local Library                   = loadstring(game:HttpGet('https://raw.githubusercontent.com/senpaioffice132/Shambles-Haxx/main/Library.lua'))()
-
+local Library                   = getgenv().Library
+local ThemeManager              = getgenv().ThemeManager
+local SaveManager               = getgenv().SaveManager
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new
@@ -271,9 +272,6 @@ local stringsub_table = {
     [9] = 36,
     [10] = 40
 }
-
-local ThemeManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/SaveManager.lua'))()
 
 local Window = Library:CreateWindow({ Title = 'Shambles Haxx', Center = true, AutoShow = true })
 
