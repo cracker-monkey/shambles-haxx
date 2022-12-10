@@ -8,7 +8,7 @@ local function printc(text)
     end
 end
 
-printc("Hello developer to shambles haxx!")
+printc("Welcome, developer to shambles haxx!")
 
 if PlaceId == 299659045 or PlaceId == 292439477 then
     loadstring(readfile("shambles haxx/games/phantom-forces/development/core/source.lua"))()
