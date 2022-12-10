@@ -762,7 +762,7 @@ do
         local ContainerLabel = Library:CreateLabel({
             TextXAlignment = Enum.TextXAlignment.Left;
             Size = UDim2.new(1, 0, 0, 18);
-            TextSize = 105;
+            TextSize = 14;
             Visible = false;
             ZIndex = 110;
             Parent = Library.KeybindContainer;
