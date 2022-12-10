@@ -8,11 +8,19 @@ local function printc(text)
     end
 end
 
-local function execute(path)
+local function execute(path, r)
     if syn and syn.is_beta then
-        loadstring(loadfile(tostring(path)))()
+        if r then
+            return loadstring(loadfile(tostring(path)))();
+        else
+            loadstring(loadfile(tostring(path)))()
+        end
     else
-        loadstring(readfile(tostring(path)))()
+        if r then
+            return loadstring(readfile(tostring(path)))();
+        else
+            loadstring(readfile(tostring(path)))()
+        end
     end
 end
 
@@ -20,9 +28,9 @@ do
     execute("shambles haxx/globals/information.lua")
     execute("shambles haxx/websockets/main.lua")
 
-    getgenv().Library = loadstring(readfile("shambles haxx/libraries/UI/UI.lua"))()
-    getgenv().ThemeManager = loadstring(readfile("shambles haxx/libraries/Managers/Theme Manager.lua"))()
-    getgenv().SaveManager = loadstring(readfile("shambles haxx/libraries/Managers/Configuration Manager.lua"))()
+    getgenv().Library = execute("shambles haxx/libraries/UI/UI.lua", true)
+    getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua", true)
+    getgenv().SaveManager = execute("shambles haxx/libraries/Managers/Configuration Manager.lua", true)
 
     local username = getgenv().username
 
