@@ -12,6 +12,8 @@ getgenv().Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/F
 getgenv().ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Theme%20Manager.lua?token=GHSAT0AAAAAAB2IVB75PKX6DXDQPRCCTO5QY4UQYJQ"))()
 getgenv().SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Configuration%20Manager.lua?token=GHSAT0AAAAAAB2IVB75HZZLECLOTYPHXCT4Y4UQYPQ"))()
 
+--GHSAT0AAAAAAB2IVB75OYDIXQ2PCU73WPR6Y4URDSQ
+
 printc("Hello developer to shambles haxx!")
 
 if PlaceId == 299659045 or PlaceId == 292439477 then
