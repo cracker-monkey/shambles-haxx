@@ -480,7 +480,7 @@ do
             Text = '#FFFFFF',
             TextColor3 = Library.FontColor;
             TextSize = 14;
-            TextStrokeTransparency = 0;
+            TextStrokeTransparency = 0.5;
             TextXAlignment = Enum.TextXAlignment.Left;
             ZIndex = 20,
             Parent = HueBoxInner;
@@ -1311,7 +1311,7 @@ do
             Text = Info.Default or '';
             TextColor3 = Library.FontColor;
             TextSize = 14;
-            TextStrokeTransparency = 0;
+            TextStrokeTransparency = 0.5;
             TextXAlignment = Enum.TextXAlignment.Left;
 
             ClearTextOnFocus = false;
