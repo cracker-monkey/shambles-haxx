@@ -2,14 +2,14 @@ local PlaceId = game.PlaceId
 
 local function printc(text)
     if syn then
-        rconsoleprint(text)
+        printconsole(text, 255, 255, 255)
     else
         warn(text)
     end
 end
 
 local function execute(path, r)
-    if syn and syn.is_beta then
+    if Krnl then
         if r then
             return loadstring(loadfile(tostring(path)))();
         else
@@ -26,7 +26,7 @@ end
 
 do
     execute("shambles haxx/globals/information.lua")
-    execute("shambles haxx/websockets/main.lua")
+    --execute("shambles haxx/websockets/main.lua")
 
     getgenv().Library = execute("shambles haxx/libraries/UI/UI.lua", true)
     getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua", true)
