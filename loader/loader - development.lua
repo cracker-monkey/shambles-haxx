@@ -8,6 +8,9 @@ local function printc(text)
     end
 end
 
+getgenv().ThemeManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/ThemeManager.lua'))()
+getgenv().SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/addons/SaveManager.lua'))()
+
 printc("Hello developer to shambles haxx!")
 
 if PlaceId == 299659045 or PlaceId == 292439477 then
