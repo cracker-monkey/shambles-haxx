@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "discord.js": "^14.6.0",
+    "dotenv": "^16.0.3",
+    "ws": "^8.11.0"
+  },
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "Shambles Haxx Bot",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node src/index.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
