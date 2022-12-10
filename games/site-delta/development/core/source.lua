@@ -1,7 +1,7 @@
 local shambles = {
     workspace = "shambles haxx",
     game = "Site Delta",
-    version = "2.2.1a",
+    version = "0.0.1a",
     username = getgenv().username,
 }
 
