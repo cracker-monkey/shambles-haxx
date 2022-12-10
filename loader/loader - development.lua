@@ -10,25 +10,27 @@ end
 
 local function execute(path)
     if syn and syn.is_beta then
-        loadstring(loadfile(path))()
+        loadstring(loadfile(tostring(path)))()
     else
-        loadstring(readfile(path))()
+        loadstring(readfile(tostring(path)))()
     end
 end
 
-execute("shambles haxx/globals/information.lua")
-execute("shambles haxx/websockets/main.lua")
+do
+    execute("shambles haxx/globals/information.lua")
+    execute("shambles haxx/websockets/main.lua")
 
-getgenv().Library = execute("shambles haxx/libraries/UI/UI.lua")
-getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua")
-getgenv().SaveManager = execute("shambles haxx/libraries/Managers/Configuration Manager.lua")
+    getgenv().Library = loadstring(readfile("shambles haxx/libraries/UI/UI.lua"))()
+    getgenv().ThemeManager = loadstring(readfile("shambles haxx/libraries/Managers/Theme Manager.lua"))()
+    getgenv().SaveManager = loadstring(readfile("shambles haxx/libraries/Managers/Configuration Manager.lua"))()
 
-local username = getgenv().username
+    local username = getgenv().username
 
-printc("Welcome, ".. username .." to shambles haxx!")
+    printc("Welcome, ".. username .." to shambles haxx!")
 
-if PlaceId == 299659045 or PlaceId == 292439477 then
-    execute("shambles haxx/games/phantom-forces/development/core/source.lua")
-else
-    execute("shambles haxx/games/universal/development/core/source.lua")
+    if PlaceId == 299659045 or PlaceId == 292439477 then
+        execute("shambles haxx/games/phantom-forces/development/core/source.lua")
+    else
+        execute("shambles haxx/games/universal/development/core/source.lua")
+    end
 end
