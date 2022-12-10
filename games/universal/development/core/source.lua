@@ -2,7 +2,7 @@ local shambles ={
     workspace = "shambles haxx",
     game = "Universal",
     version = "2.2.1a",
-    username = "developer",
+    username = getgenv().username,
 }
 
 local PLRDS = {}

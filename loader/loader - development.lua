@@ -8,7 +8,11 @@ local function printc(text)
     end
 end
 
-printc("Welcome, developer to shambles haxx!")
+loadstring(readfile("shambles haxx/globals/information.lua"))()
+
+local username = getgenv().username
+
+printc("Welcome, ".. username .." to shambles haxx!")
 
 if PlaceId == 299659045 or PlaceId == 292439477 then
     loadstring(readfile("shambles haxx/games/phantom-forces/development/core/source.lua"))()
