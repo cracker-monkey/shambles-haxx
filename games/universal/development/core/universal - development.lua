@@ -121,9 +121,9 @@ local Crosshair = {
     Top = Ut.New({type = "Line"}),
     Bottom = Ut.New({type = "Line"}),
 }
-
-local Library                   = getgenv().Library
-
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/UI/UI.lua?token=GHSAT0AAAAAAB2IVB74WGWIG73BUZNEM2MMY4URRNQ"))()
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Theme%20Manager.lua?token=GHSAT0AAAAAAB2IVB74X5U25GYEE4UB5H42Y4URTEA"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FunnyManWrehas/shambles-haxx/main/libraries/Managers/Configuration%20Manager.lua?token=GHSAT0AAAAAAB2IVB75MWKRA7VNF6XCADQ6Y4URTLA"))()
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new
@@ -390,14 +390,14 @@ MenuGroup:AddButton('Unload', function() Library:Unload() end)
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
 
 Library.ToggleKeybind = Options.MenuKeybind
-getgenv().ThemeManager:SetLibrary(Library)
-getgenv().SaveManager:SetLibrary(Library)
-getgenv().SaveManager:IgnoreThemeSettings() 
-getgenv().SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
-getgenv().ThemeManager:SetFolder(shambles.workspace)
-getgenv().SaveManager:SetFolder(shambles.workspace .."/"..shambles.game)
-getgenv().SaveManager:BuildConfigSection(Tabs['Settings']) 
-getgenv().ThemeManager:ApplyToTab(Tabs['Settings'])
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings() 
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
+ThemeManager:SetFolder(shambles.workspace)
+SaveManager:SetFolder(shambles.workspace .."/"..shambles.game)
+SaveManager:BuildConfigSection(Tabs['Settings']) 
+ThemeManager:ApplyToTab(Tabs['Settings'])
 
 local Friend = {}
 
