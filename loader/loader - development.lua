@@ -9,18 +9,10 @@ local function printc(text)
 end
 
 local function execute(path, r)
-    if Krnl then
-        if r then
-            return loadstring(loadfile(tostring(path)))();
-        else
-            loadstring(loadfile(tostring(path)))()
-        end
+    if r then
+        return loadstring(readfile(tostring(path)))();
     else
-        if r then
-            return loadstring(readfile(tostring(path)))();
-        else
-            loadstring(readfile(tostring(path)))()
-        end
+        loadstring(readfile(tostring(path)))()
     end
 end
 

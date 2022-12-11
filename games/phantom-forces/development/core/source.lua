@@ -356,8 +356,8 @@ local phrases = {
     "cl_junkcode 1",
     "moment - Vierre Cloud",
     "IT BASICALLY WIPES EVERY LOBBY",
-    "THERE IS NO CHEAT AND I WILL- I WILL STAND ON THIS UNTIL IM DIS-PROVEN WRONG",
-    "BUT THERE IS NO CHEAT THAT CAN COMPETE WITH EXODUS",
+    "I WILL- STAND ON THIS",
+    "THERE IS NO CHEAT THAT CAN COMPETE WITH EXODUS",
     "THAT LIKE-LIKE KILLS IT",
     "LIKE IM TELLING YOU BRO",
     "I-I GOT VOTEKICKED FROM AN AECH VEE AECH LOBBY",
@@ -1141,7 +1141,7 @@ do
 
         if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
             if self == Camera and index == "CFrame" then
-                value *= CFrame.new(Options.ThirdPersonX.Value / 18, Options.ThirdPersonY.Value / 18, Options.ThirdPersonZ.Value / 18)
+                value *= CFrame.new(Options.ThirdPersonX.Value / 14, Options.ThirdPersonY.Value / 14, Options.ThirdPersonZ.Value / 14)
             end
         end
 
@@ -1231,18 +1231,6 @@ do
                 else
                     lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
                 end
-
-                if #lol > 200 then
-                    if Toggles.ChatSpamEmojis.Value and Toggles.ChatSpamSymbols.Value then
-                        lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                    elseif Toggles.ChatSpamEmojis.Value then
-                        lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                    elseif Toggles.ChatSpamSymbols.Value then
-                        lol = string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10))
-                    else
-                        lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
-                    end
-                end
     
                 game_client.network.send(nil, "chatted", lol) 
             end
@@ -1302,8 +1290,8 @@ do
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
-                        local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v).Head.Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
-                        if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v).Head.Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
+                        local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value).Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
+                        if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value).Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
@@ -1313,7 +1301,7 @@ do
                             ragetarget = v
 
                             game_client.network:send("newbullets", tableinfo, game_client.game_clock.getTime())
-                            game_client.network:send("bullethit", v, get_character(v)[Options.RageHitscan.Value].Position, "Head", game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount)
+                            game_client.network:send("bullethit", v, get_character(v)[Options.RageHitscan.Value].Position, Options.RageHitscan.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount)
                         end
                     end
 				end
