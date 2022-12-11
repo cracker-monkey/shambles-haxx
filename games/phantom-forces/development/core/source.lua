@@ -810,7 +810,14 @@ PlayerList:AddButton('Friend', function()
         table.insert(Friend, Options.PlayerList.Value)
         Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
     elseif table.find(Friend, Options.PlayerList.Value) then
-        table.remove(Friend, Options.PlayerList.Value)
+        for i, v in pairs(Options.PlayerList.Values) do
+            for i1, v1 in pairs(v) do
+                if Options.PlayerList.Value == v1 then
+                    table.remove(v, i1)
+                end
+            end
+        end
+
         Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
     end
 
