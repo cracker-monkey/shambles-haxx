@@ -1,4 +1,4 @@
-local WebSocket = Krnl and Krnl.WebSocket.connect("ws://localhost:8022") or syn and syn.websocket.connect("ws://localhost:8022") or WebSocket and WebSocket.connect("ws://localhost:8022")
+local WebSocket = syn.websocket.connect("ws://localhost:8022")
 
 getgenv().fps = 0
 
