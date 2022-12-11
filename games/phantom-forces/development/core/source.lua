@@ -1659,6 +1659,24 @@ do
                                         end
                                     end
 
+                                    if Toggles[Group.."EspIcon"].Value and IconImg ~= nil then
+                                        --if Icon.Data ~= IconImg.data then
+                                            Icon.Data = IconImg.data
+                                        --end
+
+                                        if Icon.Size ~= Vector2.new(IconImg.w, IconImg.h) then
+                                            Icon.Size = Vector2.new(IconImg.w, IconImg.h)
+                                        end
+
+                                        if Icon.Position ~= Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2) then
+                                            Icon.Position = Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2)
+                                        end
+
+                                        Icon.Visible = true
+
+                                        yadd = yadd + IconImg.h + 2
+                                    end
+
                                     if Toggles[Group.."EspWeapon"].Value then
                                         Weapon.Visible = true
                                         if Weapon.Font ~= Drawing.Fonts[Options.TextFont.Value] then
@@ -1678,7 +1696,7 @@ do
                                             end
                                         end
 
-                                        Weapon.Position = Vector2.new(Pos.X + (Size.X / 2), Pos.Y + Size.Y + 2)
+                                        Weapon.Position = Vector2.new(Pos.X + (Size.X / 2), Pos.Y + Size.Y + 2 + yadd)
 
                                         if Options.TextCase.Value == "Normal" then
                                             if Weapon.Text ~= get_weapon(v) then
@@ -1693,24 +1711,6 @@ do
                                                 Weapon.Text = string.lower(get_weapon(v))
                                             end
                                         end
-
-                                        yadd = yadd + Weapon.TextBounds.Y + 2
-                                    end
-
-                                    if Toggles[Group.."EspIcon"].Value and IconImg ~= nil then
-                                        --if Icon.Data ~= IconImg.data then
-                                            Icon.Data = IconImg.data
-                                        --end
-
-                                        if Icon.Size ~= Vector2.new(IconImg.w, IconImg.h) then
-                                            Icon.Size = Vector2.new(IconImg.w, IconImg.h)
-                                        end
-
-                                        if Icon.Position ~= Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2 + yadd) then
-                                            Icon.Position = Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2 + yadd)
-                                        end
-
-                                        Icon.Visible = true
                                     end
 
                                     if Toggles[Group.."EspBox"].Value then
