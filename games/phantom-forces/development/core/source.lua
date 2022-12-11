@@ -1,18 +1,20 @@
-local shambles ={
+local shambles = {
     workspace = "shambles haxx",
     game = "Phantom Forces",
     version = "2.2.1a",
     username = getgenv().username,
 }
 
---[[local WebSocket = Krnl and Krnl.WebSocket.connect("ws://localhost:8023") or syn and syn.websocket.connect("ws://localhost:8023") or WebSocket and WebSocket.connect("ws://localhost:8023")
-WebSocket:Send("name-request " ..shambles.username)
-WebSocket:Send("game-request " ..shambles.game)]]
+--[[
+    local WebSocket = syn and syn.websocket.connect("ws://localhost:8023") or WebSocket and WebSocket.connect("ws://localhost:8023")
+    WebSocket:Send("name-request " ..shambles.username)
+    WebSocket:Send("game-request " ..shambles.game)
+--]]
 
+local load1 = tick()
 local PLRDS = {}
 local DWPS = {}
 local FCS = {}
-local load1 = tick()
 
 local fovcircles = {}
 local Ut = {}
@@ -109,26 +111,26 @@ function Ut.AddToGun(Gun)
 end
 
 local Watermark = {
-    Border = Ut.New({type = "Square"}),
-    Background = Ut.New({type = "Square"}),
-    Accent = Ut.New({type = "Square"}),
-    Accent2 = Ut.New({type = "Square"}),
-    BorderLine = Ut.New({type = "Square"}),
-    Gradient = Ut.New({type = "Image"}),
-    Text = Ut.New({type = "Text"}),
-    Icon = Ut.New({type = "Image"}),
+    Border = Ut.New({ type = "Square" }),
+    Background = Ut.New({ type = "Square" }),
+    Accent = Ut.New({ type = "Square" }),
+    Accent2 = Ut.New({ type = "Square" }),
+    BorderLine = Ut.New({ type = "Square" }),
+    Gradient = Ut.New({ type = "Image" }),
+    Text = Ut.New({ type = "Text" }),
+    Icon = Ut.New({ type = "Image" }),
 }
 
 local Crosshair = {
-    LeftBorder = Ut.New({type = "Line"}),
-    RightBorder = Ut.New({type = "Line"}),
-    TopBorder = Ut.New({type = "Line"}),
-    BottomBorder = Ut.New({type = "Line"}),
+    LeftBorder = Ut.New({ type = "Line" }),
+    RightBorder = Ut.New({ type = "Line" }),
+    TopBorder = Ut.New({ type = "Line" }),
+    BottomBorder = Ut.New({ type = "Line" }),
 
-    Left = Ut.New({type = "Line"}),
-    Right = Ut.New({type = "Line"}),
-    Top = Ut.New({type = "Line"}),
-    Bottom = Ut.New({type = "Line"}),
+    Left = Ut.New({ type = "Line" }),
+    Right = Ut.New({ type = "Line" }),
+    Top = Ut.New({ type = "Line" }),
+    Bottom = Ut.New({ type = "Line" }),
 }
 
 local FCS = {
@@ -143,6 +145,7 @@ do -- Client Collector
 
     for i = 1, #garbage do
         local v = garbage[i]
+
         if typeof(v) == "table" then
             if rawget(v, "send") then -- Networking Module
                 game_client.network = v
@@ -190,6 +193,7 @@ do -- Client Collector
 
     for i = 1, #loaded_modules do
         local v = loaded_modules[i]
+
         if v.Name == "PlayerSettingsInterface" then -- I use this for dynamic fov
             game_client.player_settings = require(v)
         elseif v.Name == "PublicSettings" then -- Get world data from here
@@ -270,7 +274,7 @@ local organizedPlayers          = {}
 local ragetarget                = nil
 local currentAngle              = 0
 local fps                       = 0
-local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake}
+local cache                     = { setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake }
 local ignorething
 local BarrelPos
 
@@ -606,178 +610,190 @@ local stringsub_table = {
     [10] = 40
 }
 
-local Window = Library:CreateWindow({Title = 'Shambles Haxx', Center = true, AutoShow = true})
+local Window = Library:CreateWindow({
+    Title = "Shambles Haxx",
+    Center = true,
+    AutoShow = true,
+})
+local Tabs = {
+    Legit = Window:AddTab("Legit"),
+    Rage = Window:AddTab("Rage"),
+    Visuals = Window:AddTab("Visuals"),
+    Misc = Window:AddTab("Misc"),
+    ["Settings"] = Window:AddTab("Settings")
+}
 
-local Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings')} 
 
-local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot')
-RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
-RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+do --// Legit Tab
+    local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist')
+        AimAssist:AddToggle('AimEnabled', {Text = 'Enabled'}):AddKeyPicker('AimKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Aim Assist', NoUI = false})
+        AimAssist:AddSlider('AimFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
+        AimAssist:AddSlider('AimHorizontal', {Text = 'Horizontal Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
+        AimAssist:AddSlider('AimVertical', {Text = 'Vertical Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
+        AimAssist:AddToggle('AimVisCheck', {Text = 'Visible Check'})
+        AimAssist:AddToggle('AimTeam', {Text = 'Target Teammates'})
+        AimAssist:AddDropdown('AimHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+        AimAssist:AddLabel("If your using high sensitivity make your smoothing higher!", true)
 
-local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim')
-AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
-AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
-AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
-AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
-AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
-AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
-AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
-AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
-AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
+    local SilentAim = Tabs.Legit:AddRightGroupbox('Silent Aim')
+        SilentAim:AddToggle('SilentEnabled', {Text = 'Enabled'}):AddKeyPicker('SilentKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Silent Aim', NoUI = false})
+        SilentAim:AddSlider('SilentFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
+        SilentAim:AddSlider('SilentHitchance', {Text = 'Hit Chance', Default = 80, Min = 1, Max = 100, Rounding = 0})
+        SilentAim:AddToggle('SilentVisCheck', {Text = 'Visible Check'})
+        SilentAim:AddToggle('SilentTeam', {Text = 'Target Teammates'})
+        SilentAim:AddDropdown('SilentHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+end
 
-local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist')
-AimAssist:AddToggle('AimEnabled', {Text = 'Enabled'}):AddKeyPicker('AimKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Aim Assist', NoUI = false})
-AimAssist:AddSlider('AimFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
-AimAssist:AddSlider('AimHorizontal', {Text = 'Horizontal Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
-AimAssist:AddSlider('AimVertical', {Text = 'Vertical Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
-AimAssist:AddToggle('AimVisCheck', {Text = 'Visible Check'})
-AimAssist:AddToggle('AimTeam', {Text = 'Target Teammates'})
-AimAssist:AddDropdown('AimHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-AimAssist:AddLabel("If your using high sensitivity make your smoothing higher!", true)
+do --// Rage Tab
+    local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot')
+        RageBot:AddToggle('RageEnabled', { Text = 'Enabled'}):AddKeyPicker('RageKey', { Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false })
+        RageBot:AddDropdown('RageHitscan', { Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority' })
 
-local SilentAim = Tabs.Legit:AddRightGroupbox('Silent Aim')
-SilentAim:AddToggle('SilentEnabled', {Text = 'Enabled'}):AddKeyPicker('SilentKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Silent Aim', NoUI = false})
-SilentAim:AddSlider('SilentFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
-SilentAim:AddSlider('SilentHitchance', {Text = 'Hit Chance', Default = 80, Min = 1, Max = 100, Rounding = 0})
-SilentAim:AddToggle('SilentVisCheck', {Text = 'Visible Check'})
-SilentAim:AddToggle('SilentTeam', {Text = 'Target Teammates'})
-SilentAim:AddDropdown('SilentHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+    local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim')
+        AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
+        AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
+        AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
+        AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
+        AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
+        AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
+        AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
+end
 
-local EnemyEspBox = Tabs.Visuals:AddLeftTabbox()
-local EnemyEsp = EnemyEspBox:AddTab('Enemy ESP')
-local TeamEsp = EnemyEspBox:AddTab('Team ESP')
-local SettingsEsp = EnemyEspBox:AddTab('Settings')
+do --// Visuals Tab
+    local EnemyEspBox = Tabs.Visuals:AddLeftTabbox()
+    local EnemyEsp = EnemyEspBox:AddTab('Enemy ESP')
+        EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
+        EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+        EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+        EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+        EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+        EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+        EnemyEsp:AddToggle('EnemyEspIcon', {Text = 'Weapon Icon'})
+        EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+        EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+        EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
+        EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+        EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+        EnemyEsp:AddDivider()
+        EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('EnemyColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
+        EnemyEsp:AddToggle('EnemyEspChamsSine', {Text = 'Pulse'})
+        EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        EnemyEsp:AddSlider('EnemyEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+    local TeamEsp = EnemyEspBox:AddTab('Team ESP')
+        TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
+        TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+        TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+        TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+        TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+        TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+        TeamEsp:AddToggle('TeamEspIcon', {Text = 'Weapon Icon'})
+        TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+        TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+        TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
+        TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+        TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+        TeamEsp:AddDivider()
+        TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('TeamColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
+        TeamEsp:AddToggle('TeamEspChamsSine', {Text = 'Pulse'})
+        TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        TeamEsp:AddSlider('TeamEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
 
-EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
-EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-EnemyEsp:AddToggle('EnemyEspIcon', {Text = 'Weapon Icon'})
-EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
-EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-EnemyEsp:AddDivider()
-EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('EnemyColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-EnemyEsp:AddToggle('EnemyEspChamsSine', {Text = 'Pulse'})
-EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-EnemyEsp:AddSlider('EnemyEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
 
-TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
-TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-TeamEsp:AddToggle('TeamEspIcon', {Text = 'Weapon Icon'})
-TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
-TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-TeamEsp:AddDivider()
-TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('TeamColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-TeamEsp:AddToggle('TeamEspChamsSine', {Text = 'Pulse'})
-TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-TeamEsp:AddSlider('TeamEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+    local SettingsEsp = EnemyEspBox:AddTab('Settings')
+        SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
+        SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
+        SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
+        SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
+        SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
 
-SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
-SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
-SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
-SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
-SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
+    local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP')
+        WeaponEsp:AddToggle('DroppedWeapon', {Text = 'Weapon'}):AddColorPicker('ColorDroppedWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+        WeaponEsp:AddToggle('DroppedAmmo', {Text = 'Ammo'}):AddColorPicker('ColorDroppedAmmo', {Default = Color3.fromRGB(255, 255, 255), Title = 'Ammo Color'})
 
-local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP')
-WeaponEsp:AddToggle('DroppedWeapon', {Text = 'Weapon'}):AddColorPicker('ColorDroppedWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-WeaponEsp:AddToggle('DroppedAmmo', {Text = 'Ammo'}):AddColorPicker('ColorDroppedAmmo', {Default = Color3.fromRGB(255, 255, 255), Title = 'Ammo Color'})
 
-local InterfaceBox = Tabs.Visuals:AddRightTabbox()
-local CursorEsp = InterfaceBox:AddTab('Cursor')
-local FovEsp = InterfaceBox:AddTab('Field Of View')
+    local InterfaceBox = Tabs.Visuals:AddRightTabbox()
+        local CursorEsp = InterfaceBox:AddTab('Cursor')
+            CursorEsp:AddToggle('CursorEnabled', {Text = 'Enabled'}):AddColorPicker('ColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('ColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            CursorEsp:AddSlider('CursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            CursorEsp:AddSlider('CursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            CursorEsp:AddSlider('CursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            CursorEsp:AddToggle('CursorBarrel', {Text = 'Follow Barrel'})
+            CursorEsp:AddToggle('CursorBorder', {Text = 'Border'})
+            CursorEsp:AddToggle('CursorSpin', {Text = 'Spin'})
+            CursorEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
+        local FovEsp = InterfaceBox:AddTab('Field Of View')
+            FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
+            FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
+            FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
 
-CursorEsp:AddToggle('CursorEnabled', {Text = 'Enabled'}):AddColorPicker('ColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('ColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
-CursorEsp:AddSlider('CursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
-CursorEsp:AddSlider('CursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
-CursorEsp:AddSlider('CursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
-CursorEsp:AddToggle('CursorBarrel', {Text = 'Follow Barrel'})
-CursorEsp:AddToggle('CursorBorder', {Text = 'Border'})
-CursorEsp:AddToggle('CursorSpin', {Text = 'Spin'})
-CursorEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
 
-FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
-FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
-FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
+    local OtherEspBox = Tabs.Visuals:AddRightTabbox()
+    local LocalEsp = OtherEspBox:AddTab('Local Player')
+        LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
+        LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1})
+        LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
+        LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
+        LocalEsp:AddToggle('GunChams', {Text = 'Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Outline Chams Color'})
+        LocalEsp:AddSlider('GunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        LocalEsp:AddSlider('GunOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        LocalEsp:AddToggle('ArmChams', {Text = 'Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Outline Chams Color'})
+        LocalEsp:AddSlider('ArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        LocalEsp:AddSlider('ArmOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        LocalEsp:AddToggle('BulletTracers', {Text = 'Bullet Tracers'}):AddColorPicker('ColorBulletTracers', {Default = Color3.fromRGB(255, 255, 255), Title = 'Bullet Tracers Color'})
+        LocalEsp:AddSlider('BulletTracersTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        LocalEsp:AddToggle('NoSway', {Text = 'No Sway'})
+        LocalEsp:AddToggle('NoShake', {Text = 'No Shake'})
+    local WorldEsp = OtherEspBox:AddTab('World Visuals')
+        WorldEsp:AddToggle('WorldAmbience', {Text = 'Ambience'}):AddColorPicker('ColorInsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Inside Ambience Color'}):AddColorPicker('ColorOutsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Outside Ambience Color'})
+        WorldEsp:AddToggle('WorldTime', {Text = 'Force Time'})
+        WorldEsp:AddSlider('WorldTimeAmount', {Text = 'Custom Time', Default = 12, Min = 0, Max = 24, Rounding = 0})
+        WorldEsp:AddToggle('WorldSaturation', {Text = 'Custom Saturation'}):AddColorPicker('ColorSaturation', {Default = Color3.fromRGB(255, 255, 255), Title = 'Saturation Color'})
+        WorldEsp:AddSlider('WorldSaturationAmount', {Text = 'Saturation Density', Default = 2, Min = 0, Max = 100, Rounding = 0})
 
-local OtherEspBox = Tabs.Visuals:AddRightTabbox()
-local LocalEsp = OtherEspBox:AddTab('Local Player')
-local WorldEsp = OtherEspBox:AddTab('World Visuals')
+    local Movement = Tabs.Misc:AddLeftGroupbox('Movement')
+        Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
+        Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
+        Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
+        Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
+        Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
+        Movement:AddToggle('MovementFall', {Text = 'No Fall Damage'})
 
-LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
-LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1})
-LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
-LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
-LocalEsp:AddToggle('GunChams', {Text = 'Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Outline Chams Color'})
-LocalEsp:AddSlider('GunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('GunOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('ArmChams', {Text = 'Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Outline Chams Color'})
-LocalEsp:AddSlider('ArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('ArmOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('BulletTracers', {Text = 'Bullet Tracers'}):AddColorPicker('ColorBulletTracers', {Default = Color3.fromRGB(255, 255, 255), Title = 'Bullet Tracers Color'})
-LocalEsp:AddSlider('BulletTracersTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('NoSway', {Text = 'No Sway'}) 
-LocalEsp:AddToggle('NoShake', {Text = 'No Shake'}) 
+    local Exploits = Tabs.Misc:AddLeftGroupbox('Exploits')
+        Exploits:AddSlider('ExploitsFireRate', {Text = 'Fire Rate', Default = 100, Min = 50, Max = 5000, Rounding = 0})
 
-WorldEsp:AddToggle('WorldAmbience', {Text = 'Ambience'}):AddColorPicker('ColorInsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Inside Ambience Color'}):AddColorPicker('ColorOutsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Outside Ambience Color'})
-WorldEsp:AddToggle('WorldTime', {Text = 'Force Time'})
-WorldEsp:AddSlider('WorldTimeAmount', {Text = 'Custom Time', Default = 12, Min = 0, Max = 24, Rounding = 0})
-WorldEsp:AddToggle('WorldSaturation', {Text = 'Custom Saturation'}):AddColorPicker('ColorSaturation', {Default = Color3.fromRGB(255, 255, 255), Title = 'Saturation Color'})
-WorldEsp:AddSlider('WorldSaturationAmount', {Text = 'Saturation Density', Default = 2, Min = 0, Max = 100, Rounding = 0})
+    local Extra = Tabs.Misc:AddRightGroupbox('Extra')
+        Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
+        Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
+        Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddInput('ExtraHeadsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+        Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
+        Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddInput('ExtraBodysoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+        Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
+        Extra:AddInput('ExtraGunsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Gun Sound Id', Placeholder = 'Gun Sound Id'})
+        Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
+        Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
+        Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
+        Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
+        Extra:AddButton('Join New Game', function()
+            Library:Notify("Joining a new ".. shambles.game.. " server!", 5)
+        
+            local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+            for Index, Value in pairs(Servers.data) do
+                if Value.playing ~= Value.maxPlayers and Value.playing > 20 then
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+                end
+            end
+        end)
 
-local Movement = Tabs.Misc:AddLeftGroupbox('Movement')
-Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
-Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
-Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
-Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
-Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
-Movement:AddToggle('MovementFall', {Text = 'No Fall Damage'})
+    local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
+        MenuGroup:AddButton('Unload', function() Library:Unload() end)
+        MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' })
+end
 
-local Exploits = Tabs.Misc:AddLeftGroupbox('Exploits')
-Exploits:AddSlider('ExploitsFireRate', {Text = 'Fire Rate', Default = 100, Min = 50, Max = 5000, Rounding = 0})
-
-local Extra = Tabs.Misc:AddRightGroupbox('Extra')
-Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
-Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
-Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraHeadsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
-Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
-Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraBodysoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
-Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
-Extra:AddInput('ExtraGunsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Gun Sound Id', Placeholder = 'Gun Sound Id'})
-Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
-Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
-Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
-Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
-Extra:AddButton('Join New Game', function()
-    Library:Notify("Joining a new "..shambles.game.." server!", 5)
-
-    local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
-
-    for Index, Value in pairs(Servers.data) do
-        if Value.playing ~= Value.maxPlayers and Value.playing > 20 then
-            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
-        end
-    end
-end)
-
-local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
-
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
 
 Library.ToggleKeybind = Options.MenuKeybind
 ThemeManager:SetLibrary(Library)
@@ -883,7 +899,7 @@ end)
 wait(0.4)
 
 do
-    for _,Player in pairs(Players:GetPlayers()) do
+    for _, Player in pairs(Players:GetPlayers()) do
         Ut.AddToPlayer(Player)
     end
     Players.PlayerAdded:Connect(Ut.AddToPlayer)
@@ -1529,10 +1545,10 @@ do
     end
 
     do -- Cheat Functions
-        do -- Rage Bot
+        do --// Rage Bot
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
-                for i,v in pairs(Players:GetPlayers()) do
-                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
+                for i, v in pairs(Players:GetPlayers()) do
+                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and not table.find(Friend, v.Name) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
                         local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
                         if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
