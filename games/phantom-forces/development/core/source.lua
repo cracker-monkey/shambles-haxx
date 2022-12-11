@@ -824,8 +824,6 @@ Interface:AddButton('Friend', function()
     table.foreach(Friend, print)
 end)
 
---Options.PlayerList.Values = game.Players:GetPlayers(
-
 SaveManager:LoadAutoloadConfig()
 
 if isfile(Options.WatermarkIcon.Value) then
@@ -1534,7 +1532,7 @@ do
         do -- Rage Bot
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
-                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
+                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friend, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
                         local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
                         if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
