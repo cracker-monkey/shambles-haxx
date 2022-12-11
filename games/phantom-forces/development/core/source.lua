@@ -793,16 +793,9 @@ ThemeManager:ApplyToTab(Tabs['Settings'])
 
 local Friend = {}
 
-local Interface = Tabs.Settings:AddRightGroupbox("Interface")
-Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
-Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
-Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx / {user} {fps} fps {ping} ms {version}', Numeric = false, Finished = false, Text = 'Watermark Text', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}"})
-Interface:AddInput('WatermarkIcon', {Default = 'Watermark Icon', Numeric = false, Finished = false, Text = 'Watermark Icon', Placeholder = 'Watermark Icon'})
-Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
-Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
-Interface:AddDivider()
-Interface:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
-Interface:AddButton('Refresh', function()
+local PlayerList = Tabs.Settings:AddRightGroupbox("Player List")
+PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
+PlayerList:AddButton('Refresh', function()
     for i,v in pairs(Players:GetPlayers()) do   
         if not table.find(Options.PlayerList.Values, v.Name) then
             table.insert(Options.PlayerList.Values, v.Name)
@@ -812,7 +805,7 @@ Interface:AddButton('Refresh', function()
     end
 end)
 
-Interface:AddButton('Friend', function()
+PlayerList:AddButton('Friend', function()
     if not table.find(Friend, Options.PlayerList.Value) then
         table.insert(Friend, Options.PlayerList.Value)
         Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
@@ -823,6 +816,15 @@ Interface:AddButton('Friend', function()
 
     table.foreach(Friend, print)
 end)
+
+
+local Interface = Tabs.Settings:AddRightGroupbox("Interface")
+Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
+Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
+Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx / {user} {fps} fps {ping} ms {version}', Numeric = false, Finished = false, Text = 'Watermark Text', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}"})
+Interface:AddInput('WatermarkIcon', {Default = 'Watermark Icon', Numeric = false, Finished = false, Text = 'Watermark Icon', Placeholder = 'Watermark Icon'})
+Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
+Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
 
 SaveManager:LoadAutoloadConfig()
 
