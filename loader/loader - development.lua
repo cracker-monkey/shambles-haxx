@@ -34,6 +34,7 @@ do
 
     if PlaceId == 299659045 or PlaceId == 292439477 then
         execute("shambles haxx/games/phantom-forces/development/core/source.lua")
+        --execute("shambles haxx/websockets/main.lua")
     else
         execute("shambles haxx/games/universal/development/core/source.lua")
     end

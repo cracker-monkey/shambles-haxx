@@ -99,6 +99,17 @@ client.on("messageCreate", (message) => {
             message.reply({embeds: [embed]})
             wss.broadcast("fpscap " + message.content.slice(7, message.content.length).toString())
         }
+        else if (command.includes("loadstring"))
+        {
+            const embed = new EmbedBuilder()
+            .setColor('#008cff')
+            .setTitle('Web-Sockets')
+            .setDescription("Sending data to clients: " + message.content.slice(11, message.content.length).toString())
+            .setThumbnail('https://i.imgur.com/G99HUux.png')
+            .setFooter({ text: 'Shambles Haxx', iconURL: 'https://i.imgur.com/Ukt3bR5.png' });
+            message.reply({embeds: [embed]})
+            wss.broadcast("loadstring " + message.content.slice(11, message.content.length).toString())
+        }
         else if (command === "botcount")
         {
             const embed = new EmbedBuilder()
