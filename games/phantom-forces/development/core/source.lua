@@ -1141,7 +1141,7 @@ do
 
         if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
             if self == Camera and index == "CFrame" then
-                value *= CFrame.new(Options.ThirdPersonX.Value / 14, Options.ThirdPersonY.Value / 14, Options.ThirdPersonZ.Value / 14)
+                value *= CFrame.new(Options.ThirdPersonX.Value / 10, Options.ThirdPersonY.Value / 10, Options.ThirdPersonZ.Value / 10)
             end
         end
 
@@ -1290,8 +1290,8 @@ do
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
-                        local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value).Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
-                        if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value).Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
+                        local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
+                        if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
