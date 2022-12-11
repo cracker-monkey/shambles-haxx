@@ -6,7 +6,6 @@ local shambles ={
 }
 
 local PLRDS = {}
-local DWPS = {}
 local FCS = {}
 local load1 = tick()
 
