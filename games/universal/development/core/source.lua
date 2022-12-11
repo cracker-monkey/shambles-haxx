@@ -252,8 +252,8 @@ local phrases = {
     "cl_junkcode 1",
     "moment - Vierre Cloud",
     "IT BASICALLY WIPES EVERY LOBBY",
-    "THERE IS NO CHEAT AND I WILL- I WILL STAND ON THIS UNTIL IM DIS-PROVEN WRONG",
-    "BUT THERE IS NO CHEAT THAT CAN COMPETE WITH EXODUS",
+    "THERE IS NO CHEAT AND I WILL- I WILL STAND ON THIS",
+    "THERE IS NO CHEAT THAT CAN COMPETE WITH EXODUS",
     "THAT LIKE-LIKE KILLS IT",
     "LIKE IM TELLING YOU BRO",
     "I-I GOT VOTEKICKED FROM AN AECH VEE AECH LOBBY",
@@ -508,7 +508,7 @@ do
 
     function isAlive(player)
         if not player then player = LocalPlayer end
-        return player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("Head") and player.Character.Humanoid.Health > 0 and true or false
+        return player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildWhichIsA("Humanoid").Health > 0 and true or false
 	end
 
     local function find_2d_distance( pos1, pos2 )
@@ -624,18 +624,6 @@ do
                 else
                     lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
                 end
-
-                if #lol > 200 then
-                    if Toggles.ChatSpamEmojis.Value and Toggles.ChatSpamSymbols.Value then
-                        lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                    elseif Toggles.ChatSpamEmojis.Value then
-                        lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                    elseif Toggles.ChatSpamSymbols.Value then
-                        lol = string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10))
-                    else
-                        lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
-                    end
-                end
     
 				game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(lol, "All") 
             end
@@ -738,7 +726,7 @@ do
                             if OnScreen then
                                 local Pos, Size = calculate_player_bounding_box(Character)
                                 if Pos and Size then
-                                    local Cur_Health, Max_Health = Character.Humanoid.Health, Character.Humanoid.MaxHealth
+                                    local Cur_Health, Max_Health = Character:FindFirstChildWhichIsA("Humanoid").Health, Character:FindFirstChildWhichIsA("Humanoid").MaxHealth
                                     local Box = PLRD.Box
                                     local BoxFill = PLRD.BoxFill
                                     local BoxOutline = PLRD.BoxOutline
@@ -1059,8 +1047,8 @@ do
 
                         local newDir = V3(travel.x * Options.MovementSpeedAmount.Value, LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Velocity.y, travel.Z * Options.MovementSpeedAmount.Value)
         
-                        if Toggles.MovementAutoJump.Value and LocalPlayer.Character:FindFirstChild("Humanoid"):GetState() ~= Enum.HumanoidStateType.Freefall then
-                            LocalPlayer.Character:FindFirstChild("Humanoid").Jump = true
+                        if Toggles.MovementAutoJump.Value and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid"):GetState() ~= Enum.HumanoidStateType.Freefall then
+                            LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").Jump = true
                         end
 
                         if travel.Unit.x == travel.Unit.x then
