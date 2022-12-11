@@ -25,6 +25,10 @@ local function execute(path, r)
 end
 
 do
+    if not isfolder("shambles haxx/Configs") then
+        makefolder("shambles haxx/Configs")
+    end
+
     execute("shambles haxx/globals/information.lua")
     --execute("shambles haxx/websockets/main.lua")
 

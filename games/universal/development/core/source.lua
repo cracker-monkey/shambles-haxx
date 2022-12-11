@@ -384,10 +384,6 @@ Extra:AddButton('Join New Game', function()
     end
 end)
 
-if not isfolder(shambles.workspace .."/Configs") then
-    makefolder(shambles.workspace .."/Configs")
-end
-
 local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
 
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
