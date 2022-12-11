@@ -99,11 +99,12 @@ function Ut.AddToPlayer(Player)
 	end
 end
 
-function Ut.AddToGun(Gun)
+function Ut.AddToGun(Gun)   
 	if not DWPS[Gun] then
 		DWPS[Gun] = {
 			Name = Ut.New({type = "Text"}),
             Ammo = Ut.New({type = "Text"}),
+            Icon = Ut.New({type = "Image"}),
 		}
 	end
 end
@@ -693,6 +694,7 @@ SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Mi
 local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP')
 WeaponEsp:AddToggle('DroppedWeapon', {Text = 'Weapon'}):AddColorPicker('ColorDroppedWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
 WeaponEsp:AddToggle('DroppedAmmo', {Text = 'Ammo'}):AddColorPicker('ColorDroppedAmmo', {Default = Color3.fromRGB(255, 255, 255), Title = 'Ammo Color'})
+WeaponEsp:AddToggle('DroppedIcon', {Text = 'Weapon Icon'})
 
 local InterfaceBox = Tabs.Visuals:AddRightTabbox()
 local CursorEsp = InterfaceBox:AddTab('Cursor')
@@ -891,7 +893,7 @@ do
     Players.PlayerRemoving:Connect(function(Player)
         if PLRDS[Player] then
             for i,v in pairs(PLRDS[Player]) do
-                if v.__OBJECT_Exists then
+                if v then
                     v:Remove()
                 end
             end
@@ -909,7 +911,7 @@ do
     game.Workspace.Ignore.GunDrop.ChildRemoved:Connect(function(Gun)
         if DWPS[Gun] then
             for i,v in pairs(DWPS[Gun]) do
-                if v.__OBJECT_Exists then
+                if v then
                     v:Remove()
                 end
             end
@@ -1920,29 +1922,53 @@ do
                         if OnScreen and v:FindFirstChild("Gun") and v:FindFirstChild("Spare") and GunDistance < 90 then
                             local Name = DWP.Name
                             local Ammo = DWP.Ammo
+                            local Icon = DWP.Icon
+                            local IconImg = NameToIcon(v.Gun.Value)
+                            local ypos = 0
             
+                            if Toggles.DroppedIcon.Value and IconImg ~= nil then
+                                --if Icon.Data ~= IconImg.data then
+                                Icon.Data = IconImg.data
+                                --end
+
+                                if Icon.Size ~= Vector2.new(IconImg.w, IconImg.h) then
+                                    Icon.Size = Vector2.new(IconImg.w, IconImg.h)
+                                end
+
+                                if Icon.Position ~= Vector2.new(math.floor(Pos.x) - (IconImg.w / 2), math.floor(Pos.y + 25)) then
+                                    Icon.Position = Vector2.new(math.floor(Pos.x) - (IconImg.w / 2), math.floor(Pos.y + 25))
+                                end
+
+                                Icon.Visible = true
+                                Icon.Transparency = 1.41177 - ((GunDistance * 4) / 255)
+
+                                ypos = ypos + IconImg.h + 2
+                            end
+
                             if Toggles.DroppedWeapon.Value then
                                 Name.Visible = true
                                 Name.Font = Drawing.Fonts[Options.TextFont.Value]
                                 Name.Size = Options.TextSize.Value
                                 Name.Color = Options.ColorDroppedWeapon.Value
-                                Name.Position = Vector2.new(math.floor(Pos.x), math.floor(Pos.y + 25))
+                                Name.Position = Vector2.new(math.floor(Pos.x), math.floor(Pos.y + 25 + ypos))
                                 Name.Transparency = 1.41177 - ((GunDistance * 4) / 255)
                                 Name.Center = true
                                 Name.Text = v.Gun.Value
                                 Name.Outline = true
 
-                                if Toggles.DroppedAmmo.Value then
-                                    Ammo.Visible = true
-                                    Ammo.Font = Drawing.Fonts[Options.TextFont.Value]
-                                    Ammo.Size = Options.TextSize.Value
-                                    Ammo.Color = Options.ColorDroppedAmmo.Value
-                                    Ammo.Position = Vector2.new(math.floor(Pos.x), math.floor(Pos.y + 25 + Name.TextBounds.Y))
-                                    Ammo.Transparency = 1.41177 - ((GunDistance * 4) / 255)
-                                    Ammo.Center = true
-                                    Ammo.Text = tostring(v.Spare.Value)
-                                    Ammo.Outline = true
-                                end
+                                ypos = ypos + Name.TextBounds.Y + 2
+                            end
+
+                            if Toggles.DroppedAmmo.Value then
+                                Ammo.Visible = true
+                                Ammo.Font = Drawing.Fonts[Options.TextFont.Value]
+                                Ammo.Size = Options.TextSize.Value
+                                Ammo.Color = Options.ColorDroppedAmmo.Value
+                                Ammo.Position = Vector2.new(math.floor(Pos.x), math.floor(Pos.y + 25 + ypos))
+                                Ammo.Transparency = 1.41177 - ((GunDistance * 4) / 255)
+                                Ammo.Center = true
+                                Ammo.Text = tostring(v.Spare.Value)
+                                Ammo.Outline = true
                             end
                         end
                     else
@@ -1951,7 +1977,6 @@ do
                                 v1.Visible = false
                             end
                         end
-            
                     end
                 end
             end))
