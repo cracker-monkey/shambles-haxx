@@ -1,6 +1,5 @@
 local PlaceId = game.PlaceId
 
-
 local function execute(path, r)
     if r then
         return loadstring(readfile(tostring(path)))();
@@ -24,7 +23,7 @@ do
 
     if PlaceId == 299659045 or PlaceId == 292439477 then
         execute("shambles haxx/games/phantom-forces/development/core/source.lua")
-        execute("shambles haxx/libraries/WebSockets/Phantom Forces - WS.lua")
+        --execute("shambles haxx/libraries/WebSockets/Phantom Forces - WS.lua")
     else
         execute("shambles haxx/games/universal/development/core/source.lua")
     end

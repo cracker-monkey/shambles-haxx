@@ -213,9 +213,6 @@ do -- Client Collector
     end
 end
 
-local Library                   = getgenv().Library
-local ThemeManager              = getgenv().ThemeManager
-local SaveManager               = getgenv().SaveManager
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new
@@ -602,8 +599,6 @@ local stringsub_table = {
     [9] = 36,
     [10] = 40
 }
-
-local Window = getgenv().Window
 
 local Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings')} 
 

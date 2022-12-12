@@ -1,17 +1,14 @@
-local Library = getgenv().Library
-local Window = getgenv().Window
-
-wait(2)
-
 local LuaTab = Window:AddTab('Lua')
-local list = listfiles("shambles haxx/Configs/Phantom Forces/lua")
-local out = {}
+
+if not isfolder("shambles haxx/Configs/Phantom Forces/lua") then
+    makefolder("shambles haxx/Configs/Phantom Forces/lua")
+end
 
 local function execute(path, r)
     if r then
         return loadstring(readfile(tostring(path)))();
     else
-        loadstring(readfile(tostring(path)))()
+        loadstring(readfile(tostring(path)))();
     end
 end
 
@@ -35,54 +32,10 @@ local function w_send(websocket, message)
     websocket:Send(message)
 end
 
-getgenv().cheat = {
-    print = print_syn,
-    notify = notify,
-    username = getgenv().username,
-    uid = getgenv().uid,
-    library = Library,
-    window = Window,
-    tab = LuaTab,
-}
-
-getgenv().websockets = {
-    connect = w_connect,
-    send = w_send,
-}
-
-if not isfolder("shambles haxx/Configs/Phantom Forces/lua") then
-    makefolder("shambles haxx/Configs/Phantom Forces/lua")
-end
-
-for i = 1, #list do
-    local file = list[i]
-    if file:sub(-4) == '.lua' then
-        local pos = file:find('.lua', 1, true)
-        local start = pos
-
-        local char = file:sub(pos, pos)
-        while char ~= '/' and char ~= '\\' and char ~= '' do
-            pos = pos - 1
-            char = file:sub(pos, pos)
-        end
-
-        if char == '/' or char == '\\' then
-            table.insert(out, file:sub(pos + 1, start - 1))
-        end
-    end
-end
-
-local LuaSection = LuaTab:AddLeftGroupbox("Scripts")
-LuaSection:AddDropdown('ScriptList', { Text = 'Script List', Values = out, AllowNull = true })
-LuaSection:AddButton('Load', function()
-    if isfile("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua") then
-        execute("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua")
-    end
-end)
-LuaSection:AddButton('Refresh', function()
+local function scripts()
     local list = listfiles("shambles haxx/Configs/Phantom Forces/lua")
 
-    local gay = {}
+    local scripts = {}
     for i = 1, #list do
         local file = list[i]
         if file:sub(-4) == '.lua' then
@@ -96,12 +49,40 @@ LuaSection:AddButton('Refresh', function()
             end
 
             if char == '/' or char == '\\' then
-                table.insert(gay, file:sub(pos + 1, start - 1))
+                table.insert(scripts, file:sub(pos + 1, start - 1))
             end
         end
     end
 
-    Options.ScriptList.Values = gay
+    return scripts;
+end
+
+getgenv().cheat = {
+    print = print_syn,
+    notify = notify,
+    username = username,
+    uid = uid,
+    library = Library,
+    window = Window,
+    tab = LuaTab,
+}
+
+getgenv().websockets = {
+    connect = w_connect,
+    send = w_send,
+}
+
+local LuaSection = LuaTab:AddLeftGroupbox("Scripts")
+LuaSection:AddDropdown('ScriptList', { Text = 'Script List', Values = scripts(), AllowNull = true })
+
+LuaSection:AddButton('Load', function()
+    if isfile("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua") then
+        execute("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua")
+    end
+end)
+
+LuaSection:AddButton('Refresh', function()
+    Options.ScriptList.Values = scripts()
     Options.ScriptList:SetValues()
     Options.ScriptList:SetValue(nil)
 end)

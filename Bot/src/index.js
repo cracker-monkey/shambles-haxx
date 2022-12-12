@@ -12,12 +12,28 @@ const eventFiles = fs.readdirSync("./src/events").filter(file => file.endsWith("
 const commandFolders = fs.readdirSync("./src/commands");
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({ port: 8022 });
+const SHS = new WebSocket.Server({ port: 8020 });
+
+SHS.broadcast = function broadcast(msg) {
+    SHS.clients.forEach(function each(client) {
+        client.send(msg);
+    });
+};
 
 wss.broadcast = function broadcast(msg) {
     wss.clients.forEach(function each(client) {
         client.send(msg);
     });
 };
+
+
+SHS.on("connection", ws => {
+    console.log("Client connected.");
+
+    ws.on("message", data => {
+        SHS.broadcast(data)
+    })
+})
 
 const jokes = [
     "I'm afraid for the calendar. Its days are numbered.",
@@ -50,7 +66,6 @@ client.on("ready", async() => {
     console.log("Bot online and on.")
     client.user.setActivity("Discord bot for the users at shambles haxx.");
 })
-
 
 client.on("messageCreate", (message) => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
