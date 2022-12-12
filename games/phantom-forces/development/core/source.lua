@@ -1668,13 +1668,13 @@ do
                                             Icon.Size = Vector2.new(IconImg.w, IconImg.h)
                                         end
 
-                                        if Icon.Position ~= Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2) then
-                                            Icon.Position = Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 2)
+                                        if Icon.Position ~= Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 4) then
+                                            Icon.Position = Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 4)
                                         end
 
                                         Icon.Visible = true
 
-                                        yadd = yadd + IconImg.h + 2
+                                        yadd = yadd + IconImg.h + 4
                                     end
 
                                     if Toggles[Group.."EspWeapon"].Value then
@@ -2749,4 +2749,4 @@ do
     end
 end
 
-Library:Notify(string.format("Welcome to shambles haxx %s, Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, true)
+Library:Notify(string.format("Welcome to shambles haxx, %s. Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, true)

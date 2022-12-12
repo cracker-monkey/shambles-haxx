@@ -137,11 +137,11 @@ client.on("messageCreate", (message) => {
             const embed = new EmbedBuilder()
             .setColor('#008cff')
             .setTitle('Web-Sockets')
-            .setDescription("Commands: Say (msg), BotCount, FPS, Joke, Commands.")
+            .setDescription("Commands: Say (msg), FpsCap (int), Loadstring (path), BotCount, FPS, Joke, Deploy (plr), Commands.")
             .setThumbnail('https://i.imgur.com/G99HUux.png')
             .setFooter({ text: 'Shambles Haxx', iconURL: 'https://i.imgur.com/Ukt3bR5.png' });
             message.reply({embeds: [embed]})
-            wss.broadcast("commands Commands: Say (msg), BotCount, FPS, Joke, Commands.")
+            wss.broadcast("commands Commands: Say (msg), FpsCap (int), Loadstring (path), BotCount, FPS, Joke, Deploy (plr), Commands.")
         }
         else if (command === "joke")
         {
@@ -155,16 +155,37 @@ client.on("messageCreate", (message) => {
             message.reply({embeds: [embed]})
             wss.broadcast("joke " + ranj);
         }
+        else if (command.includes("deploy"))
+        {
+            const embed = new EmbedBuilder()
+            .setColor('#008cff')
+            .setTitle('Web-Sockets')
+            .setDescription("Sending data to clients: " + message.content.slice(8, message.content.length).toString())
+            .setThumbnail('https://i.imgur.com/G99HUux.png')
+            .setFooter({ text: 'Shambles Haxx', iconURL: 'https://i.imgur.com/Ukt3bR5.png' });
+            message.reply({embeds: [embed]})
+            wss.broadcast("deploy " + message.content.slice(8, message.content.length).toString())
+        }
         else
         {
             const embed = new EmbedBuilder()
             .setColor('#008cff')
             .setTitle('Web-Sockets')
-            .setDescription('Invalid command or not enough permission.')
+            .setDescription('Invalid command. Use ' + prefix + 'commands to check commands.')
             .setThumbnail('https://i.imgur.com/G99HUux.png')
             .setFooter({ text: 'Shambles Haxx', iconURL: 'https://i.imgur.com/Ukt3bR5.png' });
             message.reply({embeds: [embed]})
         }
+    }
+    else
+    {
+        const embed = new EmbedBuilder()
+        .setColor('#008cff')
+        .setTitle('Web-Sockets')
+        .setDescription('Not enough permission.')
+        .setThumbnail('https://i.imgur.com/G99HUux.png')
+        .setFooter({ text: 'Shambles Haxx', iconURL: 'https://i.imgur.com/Ukt3bR5.png' });
+        message.reply({embeds: [embed]})
     }
 })
 

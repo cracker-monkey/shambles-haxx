@@ -2401,8 +2401,8 @@ function Library:Notify(Text, Time, warning)
 
     task.spawn(function()
         while task.wait() do
-            LeftColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 2)) * 140) + 80, 0) or Library.AccentColor
-            BottomColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 2)) * 140) + 80, 0) or Library.AccentColor
+            LeftColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 3))) * 255, 0) or Library.AccentColor
+            BottomColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 3))) * 255, 0) or Library.AccentColor
         end
     end)
 
