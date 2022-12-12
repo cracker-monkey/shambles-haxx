@@ -603,7 +603,7 @@ local stringsub_table = {
     [10] = 40
 }
 
-local Window = Library:CreateWindow({Title = 'Shambles Haxx', Center = true, AutoShow = true})
+local Window = getgenv().Window
 
 local Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings')} 
 
