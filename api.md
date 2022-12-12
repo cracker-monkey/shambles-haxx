@@ -4,16 +4,16 @@ Cheat table
 ---
 getgenv().cheat
 ---
-    print(text (string), color3)
+    getgenv().cheat.print(text (string), color3)
     ---
-    notify(text (string), time (int), warning (bool))
+    getgenv().cheat.notify(text (string), time (int), warning (bool))
     ---
-    username
+    getgenv().cheat.username
     ---
-    uid
+    getgenv().cheat.uid
     ---
-    library
+    getgenv().cheat.library
     ---
-    window
+    getgenv().cheat.window
     ---
-    tab
+    getgenv().cheat.tab
