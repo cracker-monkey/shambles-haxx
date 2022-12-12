@@ -5,10 +5,6 @@ local shambles ={
     username = getgenv().username,
 }
 
---[[local WebSocket = Krnl and Krnl.WebSocket.connect("ws://localhost:8023") or syn and syn.websocket.connect("ws://localhost:8023") or WebSocket and WebSocket.connect("ws://localhost:8023")
-WebSocket:Send("name-request " ..shambles.username)
-WebSocket:Send("game-request " ..shambles.game)]]
-
 local PLRDS = {}
 local DWPS = {}
 local FCS = {}
@@ -753,12 +749,12 @@ local Extra = Tabs.Misc:AddRightGroupbox('Extra')
 Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
 Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
 Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraHeadsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+Extra:AddInput('ExtraHeadsoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
 Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
 Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraBodysoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+Extra:AddInput('ExtraBodysoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
 Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
-Extra:AddInput('ExtraGunsoundId', {Default = '1289263994', Numeric = false, Finished = false, Text = 'Gun Sound Id', Placeholder = 'Gun Sound Id'})
+Extra:AddInput('ExtraGunsoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Gun Sound Id', Placeholder = 'Gun Sound Id'})
 Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
 Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
 Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
@@ -1097,12 +1093,6 @@ do
     game_client.network.send = function(self, command, ...)
         local args = { ... }
 
-        --[[if command == "bullethit" or command == "knifehit" then
-            if table.find(menu.friends, args[2].Name) then
-                return
-            end
-        end]]
-
         if command == "newbullets" then
             if Toggles.ExtraGunSound.Value then
                 local gun = Instance.new("Sound")
@@ -1112,15 +1102,7 @@ do
                 gun.Parent = workspace
                 gun:Play()
             end
-        end
 
-        if command == "repupdate" then
-            if Toggles.AntiHide.Value and game_client.LocalPlayer.isAlive() then
-                args[1] = args[1] - Vector3.new(0, 1.2, 0)
-            end
-        end
-
-        if command == "newbullets" then
             if Toggles.BulletTracers.Value then
                 for k = 1, #args[1].bullets do
                     local bullet = args[1].bullets[k]
@@ -1136,7 +1118,11 @@ do
             end
         end
 
-        if command == "repupdate" then    
+        if command == "repupdate" then   
+            if Toggles.AntiHide.Value and game_client.LocalPlayer.isAlive() then
+                args[1] = args[1] - Vector3.new(0, 1.2, 0)
+            end
+            
             if Toggles.AntiEnabled.Value and Options.AntiKey:GetState() then
                 --{ "Off", "Up", "Down", "Random", "Sine Wave" }
                 --{Values = { "Off", "Backwards", "Spin", "Random" }
@@ -1176,7 +1162,7 @@ do
         end
 
         if command == "bullethit" then
-            Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), 2.5)
+            --Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), 2.5)
             if Toggles.ExtraHeadsound.Value and tostring(args[3]) == "Head" then
                 local head = Instance.new("Sound")
                 head.Looped = false
@@ -1364,18 +1350,6 @@ do
             end
         end
 
-        --[[if args[1] == "newbullets" then
-            for k = 1, #args[2].bullets do
-                if rage.plr ~= nil then
-                    local bullet = args[2].bullets[k]
-                    bullet[1] = rage.plr
-                else
-                    print("nil")
-                end
-            end
-            print(rage.plr)
-        end]]
-
         return send(self, command, table.unpack(args))
     end
 
@@ -1433,36 +1407,6 @@ do
         local s = math.sin(r);
         return Vector2.new(c * v2.X - s*v2.Y, s*v2.X + c*v2.Y)
     end
-
-    --[[local WebSocket2 = Krnl and Krnl.WebSocket.connect("ws://localhost:8022") or syn and syn.websocket.connect("ws://localhost:8022") or WebSocket and WebSocket.connect("ws://localhost:8022")
-
-    WebSocket2.OnMessage:Connect(function(msg)
-        if string.find(msg, "saycmd") then
-            game_client.network.send(nil, "chatted", string.sub(msg, 8, #msg)) 
-            Library:Notify("You got sent a request\nSay (" ..string.sub(msg, 8, #msg).. ").")
-            print(msg)
-        elseif string.find(msg, "botcount") then
-            game_client.network.send(nil, "chatted", "Clients connected: " ..string.sub(msg, 10, #msg)) 
-            Library:Notify("You got sent a request\nBot Count (" ..string.sub(msg, 10, #msg).. ").")
-            print(msg)
-        elseif string.find(msg, "commands") then
-            game_client.network.send(nil, "chatted", string.sub(msg, 10, #msg)) 
-            Library:Notify("You got sent a request\nCommands (" ..string.sub(msg, 10, #msg).. ").")
-            print(msg)
-        elseif msg == "fps" then
-            game_client.network.send(nil, "chatted", "Current FPS: " ..tostring(fps)) 
-            Library:Notify("You got sent a request\nFPS.")
-            print(msg)
-        elseif string.find(msg, "fpscap") then
-            setfpscap(tonumber(string.sub(msg, 7, #msg)))
-            Library:Notify("You got sent a request\nSet FPS cap (" ..string.sub(msg, 9, #msg)..").")
-            print(msg)
-        elseif string.find(msg, "joke") then
-            game_client.network.send(nil, "chatted", string.sub(msg, 6, #msg)) 
-            Library:Notify("You got sent a request\nJoke (" ..string.sub(msg, 6, #msg)..").")
-            print(msg)
-        end
-    end)]]
 
     task.spawn(function()
         while task.wait(Options.ChatSpamDelay.Value) do
@@ -1536,7 +1480,7 @@ do
         do -- Rage Bot
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
-                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friend, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
+                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friend, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
                         if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
@@ -2316,7 +2260,7 @@ do
                     end
                     if FCS.AimAssist.Radius ~= Options.AimFov.Value * 2 then
                         FCS.AimAssist.Radius = Options.AimFov.Value * 2
-                    end
+                    end 
                 else
                     if FCS.AimAssist.Visible ~= false then
                         FCS.AimAssist.Visible = false
@@ -2340,7 +2284,7 @@ do
                     end
                 end
                 
-                if game_client.LocalPlayer.isAlive() and Toggles.ExtraGunSound.Value and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name ~= "KNIFE" then
+                if game_client.LocalPlayer.isAlive() and Toggles.ExtraGunSound.Value and curgun <= 2 then
                     game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firesoundid = "rbxassetid://"
                 end
 
