@@ -2,18 +2,27 @@
 
 Cheat table
 ---
-getgenv().cheat
+cheat
 ---
-    getgenv().cheat.print(text (string), color3)
+    cheat.print(text (string), color3)
     ---
-    getgenv().cheat.notify(text (string), time (int), warning (bool))
+    cheat.notify(text (string), time (int), warning (bool))
     ---
-    getgenv().cheat.username
+    cheat.username
     ---
-    getgenv().cheat.uid
+    cheat.uid
     ---
-    getgenv().cheat.library
+    cheat.library
     ---
-    getgenv().cheat.window
+    cheat.window
     ---
-    getgenv().cheat.tab
+    cheat.tab
+---
+Websockets table
+---
+websockets
+---
+    connect(port (int))
+    ---
+    send(text (string))
+---
