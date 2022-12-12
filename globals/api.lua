@@ -1,5 +1,3 @@
-local LuaTab = Window:AddTab('Lua')
-
 if not isfolder("shambles haxx/Configs/Phantom Forces/lua") then
     makefolder("shambles haxx/Configs/Phantom Forces/lua")
 end
@@ -64,7 +62,7 @@ getgenv().cheat = {
     uid = uid,
     library = Library,
     window = Window,
-    tab = LuaTab,
+    tabs = Tabs,
 }
 
 getgenv().websockets = {
@@ -72,7 +70,7 @@ getgenv().websockets = {
     send = w_send,
 }
 
-local LuaSection = LuaTab:AddLeftGroupbox("Scripts")
+local LuaSection = Tabs.Lua:AddLeftGroupbox("Scripts")
 LuaSection:AddDropdown('ScriptList', { Text = 'Script List', Values = scripts(), AllowNull = true })
 
 LuaSection:AddButton('Load', function()

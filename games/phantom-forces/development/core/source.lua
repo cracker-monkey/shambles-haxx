@@ -600,7 +600,7 @@ local stringsub_table = {
     [10] = 40
 }
 
-local Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings')} 
+getgenv().Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings'), Lua = Window:AddTab("Lua")} 
 
 local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot')
 RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
