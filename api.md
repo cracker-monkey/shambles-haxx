@@ -22,7 +22,7 @@ Websockets table
 ---
 websockets
 ---
-    connect(port (int))
+    websockets.connect(port (int))
     ---
-    send(text (string))
+    websockets.send(text (string))
 ---
