@@ -1,12 +1,5 @@
 local PlaceId = game.PlaceId
 
-local function printc(text)
-    if syn then
-        printconsole(text, 255, 255, 255)
-    else
-        warn(text)
-    end
-end
 
 local function execute(path, r)
     if r then
@@ -28,10 +21,6 @@ do
 
     execute("shambles haxx/globals/information.lua")
     execute("shambles haxx/globals/api.lua")
-
-    local username = getgenv().username
-
-    printc("Welcome, ".. username .." to shambles haxx!")
 
     if PlaceId == 299659045 or PlaceId == 292439477 then
         execute("shambles haxx/games/phantom-forces/development/core/source.lua")
