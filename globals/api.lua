@@ -10,26 +10,6 @@ local function execute(path, r)
     end
 end
 
-local function print_syn(text, color)
-    printconsole(text, color.R * 255, color.B * 255, color.G * 255)
-end
-
-local function notify(text, time, warning)
-    Library:Notify(text, time, warning)
-end
-
-local function w_connect(port)
-    if port == nil then port = 8022 end
-
-    local websocket = syn.websocket.connect("ws://localhost:".. tostring(port))
-
-    return websocket
-end
-
-local function w_send(websocket, message)
-    websocket:Send(message)
-end
-
 local function scripts()
     local list = listfiles("shambles haxx/Configs/Phantom Forces/lua")
 
@@ -53,22 +33,47 @@ local function scripts()
     end
 
     return scripts;
-end
+end 
 
 getgenv().cheat = {
-    print = print_syn,
-    notify = notify,
+    print = function(text, color)
+        printconsole(text, color.R * 255, color.B * 255, color.G * 255) 
+    end,
+    notify = function(text, time, warning, showtime)
+        Library:Notify(text, time, warning, showtime)
+    end,
     username = username,
     uid = uid,
     library = Library,
     window = Window,
     tabs = Tabs,
+    friends = Friends,
+    scripts = {},
 }
 
-getgenv().websockets = {
-    connect = w_connect,
-    send = w_send,
-}
+getgenv().websockets = {}
+
+function cheat.scripts:Run(file)
+    if isfile("shambles haxx/Configs/Phantom Forces/lua/" ..tostring(file)) then
+        execute("shambles haxx/Configs/Phantom Forces/lua/" ..tostring(file))
+    end
+end
+
+function websockets:connect(port)
+    if port == nil then port = 8022 end
+
+    local websocket = syn.websocket.connect("ws://localhost:".. tostring(port))
+
+    return websocket
+end
+
+function websockets:send(websocket, message)
+    websocket:Send(message)
+end
+
+function websockets:close(websocket)
+    websocket:Close()
+end
 
 local LuaSection = Tabs.Lua:AddLeftGroupbox("Scripts")
 LuaSection:AddDropdown('ScriptList', { Text = 'Script List', Values = scripts(), AllowNull = true })

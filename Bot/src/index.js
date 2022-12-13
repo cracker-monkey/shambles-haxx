@@ -27,11 +27,26 @@ wss.broadcast = function broadcast(msg) {
 };
 
 
+var leader = "";
+
 SHS.on("connection", ws => {
     console.log("Client connected.");
 
     ws.on("message", data => {
-        SHS.broadcast(data)
+        if (data.includes("cnc"))
+        {
+            SHS.broadcast(data)
+        }
+        else if (data.includes("led"))
+        {
+            leader = data.slice(4, data.length).toString()
+        }
+        else
+        {
+            SHS.broadcast(data)
+        }
+
+        ws.send("led " + leader);
     })
 })
 

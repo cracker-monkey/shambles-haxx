@@ -2304,7 +2304,9 @@ function Library:SetWatermark(Text)
     Library.WatermarkText.Text = Text;
 end;
 
-function Library:Notify(Text, Time, warning)
+function Library:Notify(Text, Time, warning, showtime)
+    if showtime == nil then showtime = true end
+
     local XSize, YSize = Library:GetTextBounds(Text, Enum.Font.Code, 14);
 
     YSize = YSize + 7
@@ -2335,18 +2337,19 @@ function Library:Notify(Text, Time, warning)
     local InnerFrame = Library:Create('Frame', {
         BackgroundColor3 = Color3.new(1, 1, 1);
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 1, 0, 1);
-        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 102;
         Parent = NotifyInner;
     });
 
     local Gradient = Library:Create('UIGradient', {
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(49, 49, 49)),
+            ColorSequenceKeypoint.new(0.4, Library.MainColor),
             ColorSequenceKeypoint.new(1, Library.MainColor),
         });
-        Rotation = -90;
+        Rotation = 90;
         Parent = InnerFrame;
     });
 
@@ -2372,8 +2375,17 @@ function Library:Notify(Text, Time, warning)
     local LeftColor = Library:Create('Frame', {
         BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
         BorderSizePixel = 0;
-        Position = UDim2.new(0, -1, 0, -1);
-        Size = UDim2.new(0, 2, 1, 2);
+        Position = UDim2.new(0, 0, 0, -1);
+        Size = UDim2.new(0, 1, 1, 2);
+        ZIndex = 104;
+        Parent = NotifyOuter;
+    });
+
+    local LeftColor2 = Library:Create('Frame', {
+        BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 1, 0, -1);
+        Size = UDim2.new(0, 1, 1, 2);
         ZIndex = 104;
         Parent = NotifyOuter;
     });
@@ -2382,7 +2394,7 @@ function Library:Notify(Text, Time, warning)
         BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
         BorderSizePixel = 0;
         Position = UDim2.new(0, -1, 0, -1 + YSize);
-        Size = UDim2.new(0, 0, 0, 2);
+        Size = UDim2.new(0, 18, 0, 1);
         ZIndex = 104;   
         Parent = NotifyOuter;
     });
@@ -2391,17 +2403,45 @@ function Library:Notify(Text, Time, warning)
         BackgroundColor3 = 'AccentColor';
     }, true);
 
+    Library:AddToRegistry(LeftColor2, {
+        BackgroundColor3 = 'AccentColor';
+    }, true);
+
     Library:AddToRegistry(BottomColor, {
         BackgroundColor3 = 'AccentColor';
     }, true);
 
-    pcall(BottomColor.TweenSize, BottomColor, UDim2.new(0, XSize + 8 + 4, 0, 2), 'Out', 'Quad', Time or 5, true);
+    local tweenInfo = TweenInfo.new(
+        1, --Time
+        Enum.EasingStyle.Linear, --EasingStyle
+        Enum.EasingDirection.Out, --EasingDirection
+        0, --Repeat count
+        true, --Reverses if true
+        0 --Delay time
+    )
+
+    if showtime then
+        pcall(BottomColor.TweenSize, BottomColor, UDim2.new(0, XSize + 8 + 4, 0, 2), 'Out', 'Quad', Time or 5, true);
+    else
+        local lol = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(1, -18, 0, -1 + YSize)}, 'Out', 'Quad')
+        local lol2 = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(0, -1, 0, -1 + YSize)}, 'Out', 'Quad')
+    
+        task.spawn(function()
+            while task.wait() do
+                lol:Play()
+                wait(1)
+                lol2:Play()
+            end
+        end)
+    end
+
 
     pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
 
     task.spawn(function()
         while task.wait() do
             LeftColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 3))) * 255, 0) or Library.AccentColor
+            LeftColor2.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 3))) * 255, 0) or Color3.fromRGB(Library.AccentColor.R * 255 - 40, Library.AccentColor.G * 255 - 40, Library.AccentColor.B * 255 - 40)
             BottomColor.BackgroundColor3 = warning == true and Color3.fromRGB(0, (math.abs(math.sin(tick() * 3))) * 255, 0) or Library.AccentColor
         end
     end)

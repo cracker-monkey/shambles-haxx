@@ -133,86 +133,6 @@ local FCS = {
     SilentAim = Ut.New({type = "Circle"}),
 }
 
-local game_client = {}
-do -- Client Collector
-    local garbage = getgc(true)
-    local loaded_modules = getloadedmodules()
-
-    for i = 1, #garbage do
-        local v = garbage[i]
-        if typeof(v) == "table" then
-            if rawget(v, "send") then -- Networking Module
-                game_client.network = v
-            elseif rawget(v, 'goingLoud') and rawget(v, 'isInSight') then -- Useful for Radar Hack or Auto Spot
-                game_client.spotting_interface = v
-            elseif rawget(v, 'bulletAcceleration') then
-                game_client.bulletAccel = v
-            elseif rawget(v, 'setMinimapStyle') and rawget(v, 'setRelHeight') then -- Useful for Radar Hack
-                game_client.radar_interface = v
-            elseif rawget(v, "getCharacterModel") and rawget(v, 'popCharacterModel') then -- Used for Displaying other Characters
-                game_client.third_person_object = v
-            elseif rawget(v, "getCharacterObject") then -- Used for sending LocalPlayer Character Data to Server
-                game_client.character_interface = v
-            elseif rawget(v, "isSprinting") and rawget(v, "getArmModels") then -- Used for sending LocalPlayer Character Data to Server
-                game_client.character_object = v
-            elseif rawget(v, "updateReplication") and rawget(v, "getThirdPersonObject") then -- This represents a "Player" separate from their character
-                game_client.replication_object = v
-            elseif rawget(v, "setHighMs") and rawget(v, "setLowMs") then -- Same as above
-                game_client.replication_interface = v
-            elseif rawget(v, 'setSway') and rawget(v, "_applyLookDelta") then -- You can modify camera values with this
-                game_client.main_camera_object = v
-            elseif rawget(v, 'getActiveCamera') and rawget(v, "getCameraType") then -- You can modify camera values with this
-                game_client.camera_interface = v
-            elseif rawget(v, 'getFirerate') and rawget(v, "getFiremode") then -- Weapon Stat Hooks
-                game_client.firearm_object = v
-            elseif rawget(v, 'canMelee') and rawget(v, "_processMeleeStateChange") then -- Melee Stat Hooks
-                game_client.melee_object = v
-            elseif rawget(v, 'canCancelThrow') and rawget(v, "canThrow") then -- Grenade Stat Hooks
-                game_client.grenade_object = v
-            elseif rawget(v, "vote") then -- Useful for Auto Vote
-                game_client.votekick_interface = v
-            elseif rawget(v, "getActiveWeapon") then -- Useful for getting current weapon
-                game_client.weapon_controller_object = v
-            elseif rawget(v, "getController") then -- Useful for getting your current weapon
-                game_client.weapon_controller_interface = v
-            elseif rawget(v, "updateVersion") and rawget(v, "inMenu") then -- Useful for chat spam :)
-                game_client.chat_interface = v
-            elseif rawget(v, "trajectory") and rawget(v, "timehit") then -- Useful for ragebot (Note: This table is frozen, use setreadonly)
-                game_client.physics = v
-            elseif rawget(v, "slerp") and rawget(v, "toanglesyx") then -- Useful for angles (Note: This table is frozen, use setreadonly)
-                game_client.vector = v
-            end
-        end
-    end
-
-    for i = 1, #loaded_modules do
-        local v = loaded_modules[i]
-        if v.Name == "PlayerSettingsInterface" then -- I use this for dynamic fov
-            game_client.player_settings = require(v)
-        elseif v.Name == "PublicSettings" then -- Get world data from here
-            game_client.PBS = require(v)
-        elseif v.Name == "particle" then -- Useful for silent aim
-            game_client.particle = require(v)
-        elseif v.Name == "CharacterInterface" then
-            game_client.LocalPlayer = require(v)
-        elseif v.Name == "WeaponControllerInterface" then
-            game_client.WCI = require(v)
-        elseif v.Name == "ActiveLoadoutUtils" then
-            game_client.active_loadout = require(v)
-        elseif v.Name == "GameClock" then
-            game_client.game_clock = require(v)
-        elseif v.Name == "PlayerDataStoreClient" then
-            game_client.player_data = require(v)
-        elseif v.Name == "ReplicationInterface" then
-            game_client.replication = require(v)
-        elseif v.Name == "BulletCheck" then -- Wall Penetration for ragebot
-            game_client.bullet_check = require(v)
-        elseif v.Name == "WeaponObject" then
-            game_client.WeaponObject = require(v)
-        end
-    end
-end
-
 local INST                      = Instance.new
 local V2                        = Vector2.new
 local V3                        = Vector3.new
@@ -264,7 +184,7 @@ local organizedPlayers          = {}
 local ragetarget                = nil
 local currentAngle              = 0
 local fps                       = 0
-local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake}
+local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake, gsway = game_client.firearm_object.gunSway, wsway = game_client.firearm_object.walkSway}
 local ignorething
 local BarrelPos
 
@@ -712,10 +632,18 @@ LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPe
 LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1})
 LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
 LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
-LocalEsp:AddToggle('GunChams', {Text = 'Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Outline Chams Color'})
+LocalEsp:AddToggle('AGunChams', {Text = 'Gun Chams'}):AddColorPicker('AColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'})
+LocalEsp:AddSlider('AGunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+LocalEsp:AddSlider('AGunChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
+LocalEsp:AddDropdown('AGunChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
+LocalEsp:AddToggle('AArmChams', {Text = 'Arm Chams'}):AddColorPicker('AColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'})
+LocalEsp:AddSlider('AArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+LocalEsp:AddSlider('AArmChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
+LocalEsp:AddDropdown('AArmChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
+LocalEsp:AddToggle('GunChams', {Text = 'Highlight Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Outline Chams Color'})
 LocalEsp:AddSlider('GunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
 LocalEsp:AddSlider('GunOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('ArmChams', {Text = 'Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Outline Chams Color'})
+LocalEsp:AddToggle('ArmChams', {Text = 'Highlight Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Outline Chams Color'})
 LocalEsp:AddSlider('ArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
 LocalEsp:AddSlider('ArmOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
 LocalEsp:AddToggle('BulletTracers', {Text = 'Bullet Tracers'}):AddColorPicker('ColorBulletTracers', {Default = Color3.fromRGB(255, 255, 255), Title = 'Bullet Tracers Color'})
@@ -756,15 +684,18 @@ Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
 Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
 Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
 Extra:AddButton('Join New Game', function()
-    Library:Notify("Joining a new "..shambles.game.." server!", 5)
+    local jobid = ""
 
     local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
 
     for Index, Value in pairs(Servers.data) do
         if Value.playing ~= Value.maxPlayers and Value.playing > 20 then
             game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+            jobid = tostring(Value.id)
         end
     end
+
+    Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, false, false)
 end)
 
 local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
@@ -782,7 +713,7 @@ SaveManager:SetFolder(shambles.workspace .."/Configs/"..shambles.game)
 SaveManager:BuildConfigSection(Tabs['Settings']) 
 ThemeManager:ApplyToTab(Tabs['Settings'])
 
-local Friend = {}
+getgenv().Friends = {}
 
 local PlayerList = Tabs.Settings:AddRightGroupbox("Player List")
 PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
@@ -797,16 +728,16 @@ PlayerList:AddButton('Refresh', function()
 end)
 
 PlayerList:AddButton('Friend', function()
-    if not table.find(Friend, Options.PlayerList.Value) then
-        table.insert(Friend, Options.PlayerList.Value)
-        Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
-    elseif table.find(Friend, Options.PlayerList.Value) then
+    if not table.find(Friends, Options.PlayerList.Value) then
+        table.insert(Friends, Options.PlayerList.Value)
+        Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5, false)
+    elseif table.find(Friends, Options.PlayerList.Value) then
         for i1, v1 in pairs(Options.PlayerList.Values) do
             if Options.PlayerList.Value == v1 then
                 table.remove(Options.PlayerList.Values, i1)
             end
         end
-        Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+        Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5, false)
     end
 end)
 
@@ -1075,6 +1006,13 @@ do
             local boxsize = Vector2.new(sizeX, sizeY)
             return boxtop, boxsize 
         end
+    end
+
+    function chams(part, color, trans, reflectance, material)
+        part.Material = material == "ForceField" and "ForceField" or material == "Neon" and "Neon" or material == "Plastic" and "SmoothPlastic" or "Glass"
+        part.Color = color
+        part.Transparency =  1 - trans
+        part.Reflectance = reflectance / 10 
     end
 
     local send = game_client.network.send
@@ -1475,7 +1413,7 @@ do
         do -- Rage Bot
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
-                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friend, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
+                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friends, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
                         if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
@@ -2512,6 +2450,14 @@ do
                                 v.Highlight:Remove()
                             end
                         end
+
+                        if Toggles.AGunChams.Value then
+                            for _,v1 in pairs(v:GetChildren()) do
+                                if (v1:IsA("BasePart") or v1:IsA("MeshPart")) and v1.Transparency ~= 1 then
+                                    chams(v1, Options.AColorGunChams.Value, (Options.AGunChamsTrans.Value / (255 + 1)), Options.AGunChamsReflectance.Value, Options.AGunChamsMaterial.Value)
+                                end
+                            end
+                        end
                     end
 
                     if v.Name == "Left Arm" or v.Name == "Right Arm" then
@@ -2546,6 +2492,14 @@ do
                         else
                             if v:FindFirstChild("Highlight") then
                                 v.Highlight:Remove()
+                            end
+                        end
+
+                        if Toggles.AArmChams.Value then
+                            for _,v1 in pairs(v:GetChildren()) do
+                                if (v1:IsA("BasePart") or v1:IsA("MeshPart")) and v1.Transparency ~= 1 then
+                                    chams(v1, Options.AColorArmChams.Value, (Options.AArmChamsTrans.Value / (255 + 1)), Options.AArmChamsReflectance.Value, Options.AArmChamsMaterial.Value)
+                                end
                             end
                         end
                     end
@@ -2673,6 +2627,22 @@ do
                 local shake = Toggles.NoShake.Value and Vector3.zero or amount
             
                 return cache.shake(self, shake)
+            end
+
+            game_client.firearm_object.walkSway = function(...) 
+                if Toggles.NoSway.Value then
+                    return CFrame.new() 
+                end 
+
+                return cache.wsway(...)
+            end
+
+            game_client.firearm_object.gunSway = function(...) 
+                if Toggles.NoSway.Value then
+                    return CFrame.new() 
+                end
+
+                return cache.gsway(...)
             end
         end
 
