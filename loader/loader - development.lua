@@ -17,6 +17,7 @@ do
     getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua", true)
     getgenv().SaveManager = execute("shambles haxx/libraries/Managers/Configuration Manager.lua", true)
     getgenv().Window = Library:CreateWindow({Title = 'Shambles Haxx', Center = true, AutoShow = true})
+    getgenv().event = execute("shambles haxx/libraries/Events/Listener.lua", true)
 
     execute("shambles haxx/globals/information.lua")
 

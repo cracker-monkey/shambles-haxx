@@ -33,20 +33,7 @@ SHS.on("connection", ws => {
     console.log("Client connected.");
 
     ws.on("message", data => {
-        if (data.includes("cnc"))
-        {
-            SHS.broadcast(data)
-        }
-        else if (data.includes("led"))
-        {
-            leader = data.slice(4, data.length).toString()
-        }
-        else
-        {
-            SHS.broadcast(data)
-        }
-
-        ws.send("led " + leader);
+        SHS.broadcast(data)
     })
 })
 

@@ -2658,4 +2658,4 @@ do
     end
 end
 
-Library:Notify(string.format("Welcome to shambles haxx, %s. Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, true)
+Library:Notify(string.format("Welcome to shambles haxx, %s. Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, true, false)
