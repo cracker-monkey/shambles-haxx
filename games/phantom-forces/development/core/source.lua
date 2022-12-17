@@ -5,6 +5,10 @@ local shambles ={
     username = getgenv().username,
 }
 
+if not isfolder("shambles haxx/configs/icons") then
+    makefolder("shambles haxx/configs/icons")
+end
+
 local PLRDS = {}
 local DWPS = {}
 local FCS = {}
@@ -689,7 +693,7 @@ Extra:AddButton('Join New Game', function()
     local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
 
     for Index, Value in pairs(Servers.data) do
-        if Value.playing ~= Value.maxPlayers and Value.playing > 20 then
+        if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 120 then
             game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
             jobid = tostring(Value.id)
         end
@@ -741,26 +745,54 @@ PlayerList:AddButton('Friend', function()
     end
 end)
 
+local function icons()
+    local list = listfiles("shambles haxx/Configs/icons")
+
+    local icons = {}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.png' then
+            local pos = file:find('.png', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(icons, file:sub(pos + 1, start - 1))
+            end
+        end
+    end
+
+    return icons;
+end 
 
 local Interface = Tabs.Settings:AddRightGroupbox("Interface")
 Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
 Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
-Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx / {user} {fps} fps {ping} ms {version}', Numeric = false, Finished = false, Text = 'Watermark Text', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}"})
-Interface:AddInput('WatermarkIcon', {Default = 'Watermark Icon', Numeric = false, Finished = false, Text = 'Watermark Icon', Placeholder = 'Watermark Icon'})
+Interface:AddDropdown('WatermarkIcon', {Values = icons(), Default = 1, Multi = false, Text = 'Custom Logo'})
+Interface:AddButton('Refresh', function()
+    Options.WatermarkIcon.Values = icons()
+    Options.WatermarkIcon:SetValues()
+    Options.WatermarkIcon:SetValue(nil)
+end)
+Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx | {user} | {fps} fps | {ping} ms | {version}', Numeric = false, Finished = false, Text = 'Custom Watermark', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}\n{time}, {date}"})   
 Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
 Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
-
 SaveManager:LoadAutoloadConfig()
 
-if isfile(Options.WatermarkIcon.Value) then
-    Watermark.Icon.Data = readfile(Options.WatermarkIcon.Value)
+if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
+    Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
 else
     Watermark.Icon.Data = game:HttpGet("https://i.imgur.com/vmCJh3v.png")
 end
 
 Options.WatermarkIcon:OnChanged(function()
-    if isfile(Options.WatermarkIcon.Value) then
-        Watermark.Icon.Data = readfile(Options.WatermarkIcon.Value)
+    if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
+        Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
     end
 end)
 
@@ -1326,6 +1358,7 @@ do
             ['{ping}'] = math.floor(game:GetService('Stats').Network.ServerStatsItem["Data Ping"]:GetValue()),
             ['{game}'] = shambles.game,
             ['{time}'] = os.date("%H:%M:%S"),
+            ['{date}'] = os.date("%b. %d, %Y")
          }        
 
 		for a,b in next, triggers do 

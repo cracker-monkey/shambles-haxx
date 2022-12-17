@@ -78,6 +78,8 @@ if username == "developer" then
         websocket:Close()
     end
 
+    --cheat.scripts:Run(readfile("shambles haxx/Configs/Phantom Forces/lua/autoload.txt"))
+
     local LuaSection = Tabs.Lua:AddLeftGroupbox("Scripts")
     LuaSection:AddDropdown('ScriptList', { Text = 'Script List', Values = scripts(), AllowNull = true })
 
