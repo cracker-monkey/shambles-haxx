@@ -1,18 +1,16 @@
 local shambles ={
     workspace = "shambles haxx",
     game = "Phantom Forces",
-    version = "2.2.1a",
-    username = getgenv().username,
+    version = "2.5.6a",
+    username = username,
 }
-
-if not isfolder("shambles haxx/configs/icons") then
-    makefolder("shambles haxx/configs/icons")
-end
 
 local PLRDS = {}
 local DWPS = {}
 local FCS = {}
 local load1 = tick()
+local t = tick()
+local alive = false
 
 local fovcircles = {}
 local Ut = {}
@@ -672,28 +670,68 @@ Movement:AddToggle('MovementFall', {Text = 'No Fall Damage'})
 local Exploits = Tabs.Misc:AddLeftGroupbox('Exploits')
 Exploits:AddSlider('ExploitsFireRate', {Text = 'Fire Rate', Default = 100, Min = 50, Max = 5000, Rounding = 0})
 
+local function sounds()
+    local list = listfiles("shambles haxx/Configs/sounds")
+
+    local sounds = {}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.mp3' or file:sub(-4) == '.wav' then
+            local pos = file:find('.mp3', 1, true) or file:find('.wav', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(sounds, file:sub(pos + 1, start - 1))
+            end
+        end
+    end
+
+    return sounds;
+end 
+
+
 local Extra = Tabs.Misc:AddRightGroupbox('Extra')
 Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
 Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
 Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraHeadsoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+Extra:AddDropdown('ExtraHeadsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Head Sound'})
 Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
 Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddInput('ExtraBodysoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Head Sound Id', Placeholder = 'Head Sound Id'})
+Extra:AddDropdown('ExtraBodysoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Body Sound'})
 Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
-Extra:AddInput('ExtraGunsoundId', {Default = '1289263994', Numeric = true, Finished = false, Text = 'Gun Sound Id', Placeholder = 'Gun Sound Id'})
 Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+Extra:AddDropdown('ExtraGunsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Gun Sound'})
+Extra:AddButton('Refresh', function()
+    Options.ExtraHeadsoundId.Values = sounds()
+    Options.ExtraHeadsoundId:SetValues()
+    Options.ExtraHeadsoundId:SetValue()
+
+    Options.ExtraBodysoundId.Values = sounds()
+    Options.ExtraBodysoundId:SetValues()
+    Options.ExtraBodysoundId:SetValue()
+
+    Options.ExtraGunsoundId.Values = sounds()
+    Options.ExtraGunsoundId:SetValues()
+    Options.ExtraGunsoundId:SetValue()
+end)
 Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
 Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
 Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
 Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
+Extra:AddToggle('GameVotekick', {Text = 'Join new game on votekick'})
 Extra:AddButton('Join New Game', function()
     local jobid = ""
 
     local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
 
     for Index, Value in pairs(Servers.data) do
-        if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 120 then
+        if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
             game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
             jobid = tostring(Value.id)
         end
@@ -701,6 +739,16 @@ Extra:AddButton('Join New Game', function()
 
     Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, false, false)
 end)
+
+Toggles.AutoDeploy:OnChanged(function()
+    if Toggles.AutoDeploy.Value then
+        game_client.character_interface.spawn()
+    end
+
+    alive = Toggles.AutoDeploy.Value
+    t = tick()
+end)
+
 
 local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
 
@@ -723,7 +771,7 @@ local PlayerList = Tabs.Settings:AddRightGroupbox("Player List")
 PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
 PlayerList:AddButton('Refresh', function()
     for i,v in pairs(Players:GetPlayers()) do   
-        if not table.find(Options.PlayerList.Values, v.Name) then
+        if not table.find(Options.PlayerList.Values, v.Name) and v.Name ~= LocalPlayer.Name then
             table.insert(Options.PlayerList.Values, v.Name)
             Options.PlayerList:SetValues()
             Options.PlayerList:SetValue(nil)
@@ -738,7 +786,7 @@ PlayerList:AddButton('Friend', function()
     elseif table.find(Friends, Options.PlayerList.Value) then
         for i1, v1 in pairs(Options.PlayerList.Values) do
             if Options.PlayerList.Value == v1 then
-                table.remove(Options.PlayerList.Values, i1)
+                table.remove(Friends, i1)
             end
         end
         Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5, false)
@@ -748,7 +796,7 @@ end)
 local function icons()
     local list = listfiles("shambles haxx/Configs/icons")
 
-    local icons = {}
+    local icons = {"N/A"}
     for i = 1, #list do
         local file = list[i]
         if file:sub(-4) == '.png' then
@@ -777,7 +825,7 @@ Interface:AddDropdown('WatermarkIcon', {Values = icons(), Default = 1, Multi = f
 Interface:AddButton('Refresh', function()
     Options.WatermarkIcon.Values = icons()
     Options.WatermarkIcon:SetValues()
-    Options.WatermarkIcon:SetValue(nil)
+    Options.WatermarkIcon:SetValue("N/A")
 end)
 Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx | {user} | {fps} fps | {ping} ms | {version}', Numeric = false, Finished = false, Text = 'Custom Watermark', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}\n{time}, {date}"})   
 Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
@@ -787,12 +835,14 @@ SaveManager:LoadAutoloadConfig()
 if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
     Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
 else
-    Watermark.Icon.Data = game:HttpGet("https://i.imgur.com/vmCJh3v.png")
+    Watermark.Icon.Data = readfile("")
 end
 
 Options.WatermarkIcon:OnChanged(function()
     if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
         Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
+    else
+        Watermark.Icon.Data = readfile("")
     end
 end)
 
@@ -1058,13 +1108,36 @@ do
     game_client.network.send = function(self, command, ...)
         local args = { ... }
 
+        if command == "debug" then
+            if args[1] == "Server Kick Message: You have been votekicked out of the server!" and Toggles.GameVotekick.Value then
+                local jobid = ""
+
+                local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+            
+                for Index, Value in pairs(Servers.data) do
+                    if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+                        jobid = tostring(Value.id)
+                    end
+                end
+            
+                Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, false, false)
+            end
+        end
+
         if command == "newbullets" then
             if Toggles.ExtraGunSound.Value then
                 local gun = Instance.new("Sound")
-                gun.Looped = false
-                gun.SoundId = "rbxassetid://" ..Options.ExtraGunsoundId.Value
+                gun.Looped = false   
                 gun.Volume = Options.ExtraGunsoundVolume.Value / 10
                 gun.Parent = workspace
+
+                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3") then
+                    gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3")
+                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav") then
+                    gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav")
+                end    
+
                 gun:Play()
             end
 
@@ -1132,17 +1205,29 @@ do
                 local head = Instance.new("Sound")
                 head.Looped = false
                 head.Parent = workspace
-                head.SoundId = "rbxassetid://" ..Options.ExtraHeadsoundId.Value
                 head.Volume = Options.ExtraHeadsoundVolume.Value / 10
+
+                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3") then
+                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3")
+                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav") then
+                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav")
+                end
+
                 head:Play()
             end
 
             if Toggles.ExtraBodysound.Value and tostring(args[3]) == "Body" then
                 local body = Instance.new("Sound")
                 body.Looped = false
-                body.Parent = workspace
-                body.SoundId = "rbxassetid://" ..Options.ExtraBodysoundId.Value
+                body.Parent = workspace            
                 body.Volume = Options.ExtraBodysoundVolume.Value / 10
+
+                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3") then
+                    body.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3")
+                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav") then
+                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav")
+                end    
+
                 body:Play()
             end
         end
@@ -1967,8 +2052,9 @@ do
                 fps = math.floor(1/step)
                 currentAngle = currentAngle + math.rad((Options.CursorSpinSpeed.Value * 10) * step);
 
-                if not game_client.LocalPlayer.isAlive() and Toggles.AutoDeploy.Value then
+                if alive and not game_client.LocalPlayer.isAlive() and t + 1 < tick() then
                     game_client.character_interface.spawn()
+                    t = tick()
                 end
                 
                 if game_client.LocalPlayer.isAlive() then
@@ -1977,8 +2063,9 @@ do
 
                 if Toggles.FovBarrel.Value and game_client.LocalPlayer.isAlive() and game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart ~= nil and game_client.WCI:getController()._activeWeaponRegistry[curgun] then
                     local hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                    local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
 
-                    FovPos = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
+                    FovPos = Vector2.new(nigga.x, nigga.y)
                 else
                     FovPos = ScreenSize / 2
                 end
@@ -2256,8 +2343,8 @@ do
 
                 Watermark.Text.Text = textboxtriggers(Options.WatermarkText.Value)
             
-                if Watermark.Text.Position ~= Vector2.new(143, 17) then
-                    Watermark.Text.Position = Vector2.new(143, 17)
+                if Watermark.Text.Position ~= Vector2.new(Options.WatermarkIcon.Value == "N/A" and 58 + 4 or 58 + 27, 15) then
+                    Watermark.Text.Position = Vector2.new(Options.WatermarkIcon.Value == "N/A" and 58 + 4 or 58 + 27, 15)
                 end
             
                 if Watermark.Text.Visible ~= Toggles.InterfaceWatermark.Value then
@@ -2272,8 +2359,8 @@ do
                     Watermark.Border.Color = Color3.fromRGB(0, 0, 0)
                 end
             
-                if Watermark.Border.Position ~= Vector2.new(115, 8) then
-                    Watermark.Border.Position = Vector2.new(115, 8)
+                if Watermark.Border.Position ~= Vector2.new(57, 8) then
+                    Watermark.Border.Position = Vector2.new(57, 8)
                 end
             
                 if Watermark.Border.Filled ~= true then
@@ -2284,11 +2371,10 @@ do
                     Watermark.Border.Visible = Toggles.InterfaceWatermark.Value
                 end
                 
-                Watermark.Border.Size = Vector2.new(Watermark.Text.TextBounds.X + 34, Watermark.Text.TextBounds.Y + 17)
+                Watermark.Border.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 9 or Watermark.Text.TextBounds.X + 34, Watermark.Text.TextBounds.Y + 13)
             
-                
-                if Watermark.Gradient.Position ~= Vector2.new(116, 12) then
-                    Watermark.Gradient.Position = Vector2.new(116, 12)
+                if Watermark.Gradient.Position ~= Vector2.new(58, 12) then
+                    Watermark.Gradient.Position = Vector2.new(58, 12)
                 end
 
                 if Watermark.Gradient.Visible ~= Toggles.InterfaceWatermark.Value then
@@ -2299,14 +2385,14 @@ do
                     Watermark.Gradient.Transparency = 0.5
                 end
 
-                Watermark.Gradient.Size = Vector2.new(Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 14)
+                Watermark.Gradient.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 11)
             
                 if Watermark.Background.Color ~= Color3.fromRGB(25, 25, 25) then
                     Watermark.Background.Color = Color3.fromRGB(25, 25, 25)
                 end
             
-                if Watermark.Background.Position ~= Vector2.new(116, 9) then
-                    Watermark.Background.Position = Vector2.new(116, 9)
+                if Watermark.Background.Position ~= Vector2.new(58, 9) then
+                    Watermark.Background.Position = Vector2.new(58, 9)
                 end
             
                 if Watermark.Background.Filled ~= true then
@@ -2317,16 +2403,18 @@ do
                     Watermark.Background.Visible = Toggles.InterfaceWatermark.Value
                 end
             
-                Watermark.Background.Size = Vector2.new(Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 15)
-            
-                if Watermark.Accent.Color ~= Color3.fromHSV(math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))), 1, 1) and Toggles.RainbowAccent.Value then
-                    Watermark.Accent.Color = Color3.fromHSV(math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))), 1, 1)
+                Watermark.Background.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 11)
+
+                local Color = Color3.fromRGB((math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))) * 255), 255, 255)
+
+                if Watermark.Accent.Color ~= Color3.fromHSV(Color.R, Color.G, Color.B) and Toggles.RainbowAccent.Value then
+                    Watermark.Accent.Color = Color3.fromHSV(Color.R, Color.G, Color.B)
                 elseif Watermark.Accent.Color ~= Color3.new(Options.ColorWatermark.Value.R, Options.ColorWatermark.Value.G, Options.ColorWatermark.Value.B) then
                     Watermark.Accent.Color = Color3.new(Options.ColorWatermark.Value.R, Options.ColorWatermark.Value.G, Options.ColorWatermark.Value.B)
                 end
             
-                if Watermark.Accent.Position ~= Vector2.new(116, 9) then
-                    Watermark.Accent.Position = Vector2.new(116, 9)
+                if Watermark.Accent.Position ~= Vector2.new(58, 9) then
+                    Watermark.Accent.Position = Vector2.new(58, 9)
                 end
             
                 if Watermark.Accent.Filled ~= true then
@@ -2337,16 +2425,16 @@ do
                     Watermark.Accent.Visible = Toggles.InterfaceWatermark.Value
                 end
             
-                Watermark.Accent.Size = Vector2.new(Watermark.Text.TextBounds.X + 32, 1)
+                Watermark.Accent.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
             
-                if Watermark.Accent2.Color ~= Color3.fromHSV(math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))) - 0.04, 1 - 0.04, 1 - 0.04) and Toggles.RainbowAccent.Value then
-                    Watermark.Accent2.Color = Color3.fromHSV(math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))) - 0.04, 1 - 0.04, 1 - 0.04)
-                elseif Watermark.Accent2.Color ~= Color3.fromRGB((Options.ColorWatermark.Value.R * 255) - 40, (Options.ColorWatermark.Value.G * 255) - 40, (Options.ColorWatermark.Value.B * 255) - 40) then
-                    Watermark.Accent2.Color = Color3.fromRGB((Options.ColorWatermark.Value.R * 255) - 40, (Options.ColorWatermark.Value.G * 255) - 40, (Options.ColorWatermark.Value.B * 255) - 40)
+                if Watermark.Accent2.Color ~= Color3.fromHSV(Color.R, Color.G, Color.B) and Toggles.RainbowAccent.Value then
+                    Watermark.Accent2.Color = Color3.fromHSV(Color.R, Color.G, Color.B)
+                elseif Watermark.Accent2.Color ~= Color3.fromRGB(Options.ColorWatermark.Value.R * 255 - 40, Options.ColorWatermark.Value.G * 255 - 40, Options.ColorWatermark.Value.B * 255 - 40) then
+                    Watermark.Accent2.Color = Color3.fromRGB(Options.ColorWatermark.Value.R * 255 - 40, Options.ColorWatermark.Value.G * 255 - 40, Options.ColorWatermark.Value.B * 255 - 40)
                 end
             
-                if Watermark.Accent2.Position ~= Vector2.new(116, 10) then
-                    Watermark.Accent2.Position = Vector2.new(116, 10)
+                if Watermark.Accent2.Position ~= Vector2.new(58, 10) then
+                    Watermark.Accent2.Position = Vector2.new(58, 10)
                 end
             
                 if Watermark.Accent2.Filled ~= true then
@@ -2357,14 +2445,14 @@ do
                     Watermark.Accent2.Visible = Toggles.InterfaceWatermark.Value
                 end
             
-                Watermark.Accent2.Size = Vector2.new(Watermark.Text.TextBounds.X + 32, 1)
+                Watermark.Accent2.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
             
                 if Watermark.BorderLine.Color ~= Color3.fromRGB(0, 0, 0) then
                     Watermark.BorderLine.Color = Color3.fromRGB(0, 0, 0)
                 end
             
-                if Watermark.BorderLine.Position ~= Vector2.new(116, 11) then
-                    Watermark.BorderLine.Position = Vector2.new(116, 11)
+                if Watermark.BorderLine.Position ~= Vector2.new(58, 11) then
+                    Watermark.BorderLine.Position = Vector2.new(58, 11)
                 end
             
                 if Watermark.BorderLine.Filled ~= true then
@@ -2375,18 +2463,18 @@ do
                     Watermark.BorderLine.Visible = Toggles.InterfaceWatermark.Value
                 end
             
-                Watermark.BorderLine.Size = Vector2.new(Watermark.Text.TextBounds.X + 32, 1)
+                Watermark.BorderLine.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
             
-                if Watermark.Icon.Position ~= Vector2.new(116, 12) then
-                    Watermark.Icon.Position = Vector2.new(116, 12)
+                if Watermark.Icon.Position ~= Vector2.new(58, 12) then
+                    Watermark.Icon.Position = Vector2.new(58, 12)
                 end
             
                 if Watermark.Icon.Visible ~= Toggles.InterfaceWatermark.Value then
                     Watermark.Icon.Visible = Toggles.InterfaceWatermark.Value
                 end
             
-                if Watermark.Icon.Size ~= Vector2.new(25, 25) then
-                    Watermark.Icon.Size = Vector2.new(25, 25)
+                if Watermark.Icon.Size ~= Vector2.new(Watermark.Text.TextBounds.Y + 8, Watermark.Text.TextBounds.Y + 8) then
+                    Watermark.Icon.Size = Vector2.new(Watermark.Text.TextBounds.Y + 8, Watermark.Text.TextBounds.Y + 8)
                 end
 
                 if Toggles.WorldAmbience.Value then
