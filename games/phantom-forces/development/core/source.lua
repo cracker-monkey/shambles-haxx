@@ -630,6 +630,13 @@ local OtherEspBox = Tabs.Visuals:AddRightTabbox()
 local LocalEsp = OtherEspBox:AddTab('Local Player')
 local WorldEsp = OtherEspBox:AddTab('World Visuals')
 
+LocalEsp:AddToggle('ViewModel', {Text = 'Viewmodel Changer'})
+LocalEsp:AddSlider('ViewModelX', {Text = 'X Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+LocalEsp:AddSlider('ViewModelY', {Text = 'Y Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+LocalEsp:AddSlider('ViewModelZ', {Text = 'Z Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+LocalEsp:AddSlider('ViewModelPitch', {Text = 'Pitch', Default = 0, Min = -360, Max = 360, Rounding = 0})
+LocalEsp:AddSlider('ViewModelYaw', {Text = 'Yaw', Default = 0, Min = -360, Max = 360, Rounding = 0})
+LocalEsp:AddSlider('ViewModelRoll', {Text = 'Roll', Default = 0, Min = -360, Max = 360, Rounding = 0})
 LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
 LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1})
 LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
@@ -2757,7 +2764,9 @@ do
             end
 
             game_client.firearm_object.walkSway = function(...) 
-                if Toggles.NoSway.Value then
+                if Toggles.ViewModel.Value then
+                    return CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5) * CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                elseif Toggles.NoSway.Value then
                     return CFrame.new() 
                 end 
 
@@ -2765,9 +2774,11 @@ do
             end
 
             game_client.firearm_object.gunSway = function(...) 
-                if Toggles.NoSway.Value then
+                if Toggles.ViewModel.Value then
+                    return CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5) * CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                elseif Toggles.NoSway.Value then
                     return CFrame.new() 
-                end
+                end 
 
                 return cache.gsway(...)
             end
