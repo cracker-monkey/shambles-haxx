@@ -13,6 +13,14 @@ do
         makefolder("shambles haxx/Configs")
     end
 
+    if not isfolder("shambles haxx/configs/icons") then
+        makefolder("shambles haxx/configs/icons")
+    end
+
+    if not isfolder("shambles haxx/configs/sounds") then
+        makefolder("shambles haxx/configs/sounds")
+    end
+    
     getgenv().Library = execute("shambles haxx/libraries/UI/UI.lua", true)
     getgenv().ThemeManager = execute("shambles haxx/libraries/Managers/Theme Manager.lua", true)
     getgenv().SaveManager = execute("shambles haxx/libraries/Managers/Configuration Manager.lua", true)

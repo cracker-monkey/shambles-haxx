@@ -1,5 +1,5 @@
 if username == "developer" then
-    Library:Notify("Scripts system has been enabled, you have full access to the\nshambles haxx environment!", 10, true, false)
+    Library:Notify("Scripts system has been enabled, you have full access to the\nshambles haxx environment!", 20, "move", true)
 
     if not isfolder("shambles haxx/Configs/Phantom Forces/lua") then
         makefolder("shambles haxx/Configs/Phantom Forces/lua")
@@ -42,8 +42,8 @@ if username == "developer" then
         print = function(text, color)
             printconsole(text, color.R * 255, color.B * 255, color.G * 255) 
         end,
-        notify = function(text, time, warning, showtime)
-            Library:Notify(text, time, warning, showtime)
+        notify = function(text, time, type, warning)
+            Library:Notify(text, time, type, warning)
         end,
         username = username,
         uid = uid,
@@ -87,6 +87,8 @@ if username == "developer" then
         if isfile("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua") then
             execute("shambles haxx/Configs/Phantom Forces/lua/" ..Options.ScriptList.Value..".lua")
         end
+
+        cheat.notify("Executed script "..Options.ScriptList.Value..".lua", 5)
     end)
 
     LuaSection:AddButton('Refresh', function()

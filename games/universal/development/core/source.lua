@@ -557,6 +557,10 @@ do
         return Vector2.new(c * v2.X - s*v2.Y, s*v2.X + c*v2.Y)
     end
 
+    function floor_vector2(vector2)
+        return Vector2.new(math.floor(vector2.X), math.floor(vector2.Y))
+    end
+
     function calculate_player_bounding_box(character)
         local cam = workspace.CurrentCamera.CFrame
         local HumanoidRootPart = character.HumanoidRootPart.CFrame
@@ -715,23 +719,23 @@ do
                             end
                         end
 
+                        local Box = PLRD.Box
+                        local BoxFill = PLRD.BoxFill
+                        local BoxOutline = PLRD.BoxOutline
+                        local Name = PLRD.Name
+                        local Weapon = PLRD.Weapon
+                        local Health = PLRD.Health
+                        local HealthOutline = PLRD.HealthOutline
+                        local HealthNumber = PLRD.HealthNumber
+                        local Distance = PLRD.Distance
+
                         local Character = v.Character
                         if Character and Character:FindFirstChild("HumanoidRootPart") then
                             local Lol, OnScreen = Camera:WorldToViewportPoint(Character.HumanoidRootPart.Position)
+                            local Cur_Health, Max_Health = Character:FindFirstChildWhichIsA("Humanoid").Health, Character:FindFirstChildWhichIsA("Humanoid").MaxHealth
                             if OnScreen then
                                 local Pos, Size = calculate_player_bounding_box(Character)
                                 if Pos and Size then
-                                    local Cur_Health, Max_Health = Character:FindFirstChildWhichIsA("Humanoid").Health, Character:FindFirstChildWhichIsA("Humanoid").MaxHealth
-                                    local Box = PLRD.Box
-                                    local BoxFill = PLRD.BoxFill
-                                    local BoxOutline = PLRD.BoxOutline
-                                    local Name = PLRD.Name
-                                    local Weapon = PLRD.Weapon
-                                    local Health = PLRD.Health
-                                    local HealthOutline = PLRD.HealthOutline
-                                    local HealthNumber = PLRD.HealthNumber
-                                    local Distance = PLRD.Distance
-
                                     if Toggles[Group.."EspChams"].Value then
                                         if not game.CoreGui:FindFirstChild(v.Name) then
                                             local Highlight = Instance.new("Highlight", game.CoreGui)
@@ -975,9 +979,9 @@ do
                                         end
                                     end
 
-                                    OutOfView.PointA = pos
-                                    OutOfView.PointB = pos - rotateVector2(dir, math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value
-                                    OutOfView.PointC = pos - rotateVector2(dir, -math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value
+                                    OutOfView.PointA = floor_vector2(pos)
+                                    OutOfView.PointB = floor_vector2(pos - rotateVector2(dir, math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value)
+                                    OutOfView.PointC = floor_vector2(pos - rotateVector2(dir, -math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value)
                                     if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
                                         if OutOfView.Color ~= Options.ColorTarget.Value then
                                             OutOfView.Color = Options.ColorTarget.Value
@@ -988,6 +992,66 @@ do
                                         end
                                     end
                                     OutOfView.Visible = true
+
+                                    local box_position = floor_vector2((OutOfView.PointA + OutOfView.PointB + OutOfView.PointC) / 3 - Vector2.new(Options[Group.."EspOutOfViewSize"].Value / 2, Options[Group.."EspOutOfViewSize"].Value / 2))
+                                    local box_size = Vector2.new(Options[Group.."EspOutOfViewSize"].Value, Options[Group.."EspOutOfViewSize"].Value)
+
+                                    if Toggles[Group.."EspName"].Value then
+                                        Name.Position = Vector2.new(box_size.X / 2 + box_position.X, box_position.Y - Name.TextBounds.Y - 3)
+                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                            if Name.Color ~= Options.ColorTarget.Value then
+                                                Name.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Name.Color ~= Options[Group.."ColorName"].Value then
+                                                Name.Color = Options[Group.."ColorName"].Value
+                                            end
+                                        end 
+
+
+                                        if Name.Font ~= Drawing.Fonts[Options.TextFont.Value] then
+                                            Name.Font = Drawing.Fonts[Options.TextFont.Value]
+                                        end
+                                        if Name.Size ~= Options.TextSize.Value then
+                                            Name.Size = Options.TextSize.Value
+                                        end
+                                        Name.Visible = true
+                                        if Options.TextCase.Value == "Normal" then
+                                            if Name.Text ~= v.Name then
+                                                Name.Text = v.Name
+                                            end
+                                        elseif Options.TextCase.Value == "UPPERCASE" then
+                                            if Name.Text ~= string.upper(v.Name) then
+                                                Name.Text = string.upper(v.Name)
+                                            end
+                                        elseif Options.TextCase.Value == "lowercase" then
+                                            if Name.Text ~= string.lower(v.Name) then
+                                                Name.Text = string.lower(v.Name)
+                                            end
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspHealthBar"].Value then
+                                        Health.From = Vector2.new(box_position.X - 4, box_position.Y + box_size.Y)
+                                        Health.To = Vector2.new(box_position.X - 4, Health.From.Y - (Cur_Health / Max_Health) * box_size.Y)
+                                        Health.Visible = true
+                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                            if Health.Color ~= Options.ColorTarget.Value then
+                                                Health.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Health.Color ~= Options[Group.."ColorHealthBar"].Value then
+                                                Health.Color = Options[Group.."ColorHealthBar"].Value
+                                            end
+                                        end
+
+                                        HealthOutline.From = Vector2.new(Health.From.X, box_position.Y + box_size.Y + 1)
+                                        HealthOutline.To = Vector2.new(Health.From.X, (Health.From.Y - 1 * box_size.Y) -1)
+                                        HealthOutline.Visible = true
+                                        if HealthOutline.Thickness ~= 3 then
+                                            HealthOutline.Thickness = 3
+                                        end
+                                    end
                                 end
                             end
                         else

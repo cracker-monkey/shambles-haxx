@@ -737,7 +737,7 @@ Extra:AddButton('Join New Game', function()
         end
     end
 
-    Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, false, false)
+    Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
 end)
 
 Toggles.AutoDeploy:OnChanged(function()
@@ -782,14 +782,14 @@ end)
 PlayerList:AddButton('Friend', function()
     if not table.find(Friends, Options.PlayerList.Value) then
         table.insert(Friends, Options.PlayerList.Value)
-        Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5, false)
+        Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
     elseif table.find(Friends, Options.PlayerList.Value) then
         for i1, v1 in pairs(Options.PlayerList.Values) do
             if Options.PlayerList.Value == v1 then
                 table.remove(Friends, i1)
             end
         end
-        Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5, false)
+        Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
     end
 end)
 
@@ -1121,11 +1121,11 @@ do
                     end
                 end
             
-                Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, false, false)
+                Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
             end
         end
 
-        if command == "newbullets" then
+        if command == "newbullets" then 
             if Toggles.ExtraGunSound.Value then
                 local gun = Instance.new("Sound")
                 gun.Looped = false   
@@ -1440,7 +1440,7 @@ do
             ['{year}'] = os.date("%Y"),
             ['{version}'] = shambles.version,
             ['{fps}'] = fps,
-            ['{ping}'] = math.floor(game:GetService('Stats').Network.ServerStatsItem["Data Ping"]:GetValue()),
+            ['{ping}'] = game:GetService('Stats') ~= nil and math.floor(game:GetService('Stats').Network.ServerStatsItem["Data Ping"]:GetValue()) or "0",
             ['{game}'] = shambles.game,
             ['{time}'] = os.date("%H:%M:%S"),
             ['{date}'] = os.date("%b. %d, %Y")
@@ -1457,6 +1457,10 @@ do
         local c = math.cos(r);
         local s = math.sin(r);
         return Vector2.new(c * v2.X - s*v2.Y, s*v2.X + c*v2.Y)
+    end
+
+    function floor_vector2(vector2)
+        return vector2(math.floor(vector2.X), math.floor(vector2.Y))
     end
 
     task.spawn(function()
@@ -1534,16 +1538,18 @@ do
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friends, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
                         if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
-                            game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount = game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount + 1
+                            debug.setupvalue(game_client.firearm_object.fireRound, 10, debug.getupvalue(game_client.firearm_object.fireRound, 10) + 1)
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
-                                game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount
+                                debug.getupvalue(game_client.firearm_object.fireRound, 10),
                             }
 
                             ragetarget = v
 
                             game_client.network:send("newbullets", tableinfo, game_client.game_clock.getTime())
-                            game_client.network:send("bullethit", v, get_character(v)[Options.RageHitscan.Value].Position, Options.RageHitscan.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._fireCount)
+                            for i = 1, #tableinfo.bullets do
+                                game_client.network:send("bullethit", v, get_character(v)[Options.RageHitscan.Value].Position, Options.RageHitscan.Value, tableinfo.bullets[i][2], game_client.game_clock.getTime())
+                            end
                         end
                     end
 				end
@@ -1964,7 +1970,7 @@ do
                                 Ammo.Position = Vector2.new(math.floor(Pos.x), math.floor(Pos.y + 25 + ypos))
                                 Ammo.Transparency = 1.41177 - ((GunDistance * 4) / 255)
                                 Ammo.Center = true
-                                Ammo.Text = tostring(v.Spare.Value)
+                                Ammo.Text = "[ "..tostring(v.Spare.Value).." ]"
                                 Ammo.Outline = true
                             end
                         end
@@ -2779,4 +2785,4 @@ do
     end
 end
 
-Library:Notify(string.format("Welcome to shambles haxx, %s. Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, true, false)
+Library:Notify(string.format("Welcome to shambles haxx, %s. Version: %s.\nLoaded modules in (%sms.)", shambles.username, shambles.version, math.floor((tick() - load1) * 1000)), 8, "time")

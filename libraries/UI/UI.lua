@@ -2147,7 +2147,7 @@ end;
 do
     Library.NotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 40);
+        Position = UDim2.new(0, 58, 0, 40);
         Size = UDim2.new(0, 300, 0, 200);
         ZIndex = 100;
         Parent = ScreenGui;
@@ -2341,9 +2341,7 @@ function Library:SetWatermark(Text)
     Library.WatermarkText.Text = Text;
 end;
 
-function Library:Notify(Text, Time, warning, showtime)
-    if showtime == nil then showtime = true end
-
+function Library:Notify(Text, Time, type, warning)
     local XSize, YSize = Library:GetTextBounds(Text, Enum.Font.SourceSansSemibold, 15);
 
     YSize = YSize + 7
@@ -2358,8 +2356,8 @@ function Library:Notify(Text, Time, warning, showtime)
     });
 
     local NotifyInner = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(1, 1, 1);
         BorderColor3 = Library.OutlineColor;
+        BorderSizePixel = 1;
         BorderMode = Enum.BorderMode.Inset;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
@@ -2381,7 +2379,7 @@ function Library:Notify(Text, Time, warning, showtime)
 
     local Gradient = Library:Create('UIGradient', {
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(49, 49, 49)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB((Library.MainColor.R * 255) + 15, (Library.MainColor.G * 255) + 15, (Library.MainColor.B * 255) + 15)),
             ColorSequenceKeypoint.new(0.4, Library.MainColor),
             ColorSequenceKeypoint.new(1, Library.MainColor),
         });
@@ -2392,7 +2390,7 @@ function Library:Notify(Text, Time, warning, showtime)
     Library:AddToRegistry(Gradient, {
         Color = function()
             return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(49, 49, 49)),
+                ColorSequenceKeypoint.new(0, Color3.fromRGB((Library.MainColor.R * 255) + 15, (Library.MainColor.G * 255) + 15, (Library.MainColor.B * 255) + 15)),
                 ColorSequenceKeypoint.new(0.4, Library.MainColor),
                 ColorSequenceKeypoint.new(1, Library.MainColor),
             });
@@ -2400,7 +2398,7 @@ function Library:Notify(Text, Time, warning, showtime)
     });
 
     local NotifyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 4, 0, -1);
+        Position = UDim2.new(0, 5, 0, -1);
         Size = UDim2.new(1, -4, 1, 0);
         Text = Text;
         TextXAlignment = Enum.TextXAlignment.Left;
@@ -2412,8 +2410,8 @@ function Library:Notify(Text, Time, warning, showtime)
     local LeftColor = Library:Create('Frame', {
         BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 0, 0, -1);
-        Size = UDim2.new(0, 1, 1, 2);
+        Position = UDim2.new(0, 1, 0, 1);
+        Size = UDim2.new(0, 1, 1, -2);
         ZIndex = 104;
         Parent = NotifyOuter;
     });
@@ -2421,8 +2419,8 @@ function Library:Notify(Text, Time, warning, showtime)
     local LeftColor2 = Library:Create('Frame', {
         BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 1, 0, -1);
-        Size = UDim2.new(0, 1, 1, 2);
+        Position = UDim2.new(0, 2, 0, 1);
+        Size = UDim2.new(0, 1, 1, -2);
         ZIndex = 104;
         Parent = NotifyOuter;
     });
@@ -2430,8 +2428,8 @@ function Library:Notify(Text, Time, warning, showtime)
     local BottomColor = Library:Create('Frame', {
         BackgroundColor3 = warning == false and Library.AccentColor or Color3.fromHSV(math.abs(math.sin(tick() / (50 - 51))), 1, 1);
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 3, 0, -1 + YSize);
-        Size = UDim2.new(0, 18, 0, 1);
+        Position = UDim2.new(0, 4, 0, -2 + YSize);
+        Size = UDim2.new(0, 0, 0, 1);
         ZIndex = 104;   
         Parent = NotifyOuter;
     });
@@ -2441,7 +2439,7 @@ function Library:Notify(Text, Time, warning, showtime)
     }, true);
 
     Library:AddToRegistry(LeftColor2, {
-        BackgroundColor3 = 'AccentColor';
+        BackgroundColor3 = Color3.fromRGB(Library.AccentColor.R * 255 - 40, Library.AccentColor.G * 255 - 40, Library.AccentColor.B * 255 - 40);
     }, true);
 
     Library:AddToRegistry(BottomColor, {
@@ -2457,11 +2455,13 @@ function Library:Notify(Text, Time, warning, showtime)
         0 --Delay time
     )
 
-    if showtime then
+    if type == "time" then
         pcall(BottomColor.TweenSize, BottomColor, UDim2.new(0, XSize + 8 + 1, 0, 2), 'Out', 'Quad', Time or 5, true);
-    else
-        local lol = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(1, -18, 0, -1 + YSize)}, 'Out', 'Quad')
-        local lol2 = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(0, -1, 0, -1 + YSize)}, 'Out', 'Quad')
+    elseif type == "move" then
+        BottomColor.Size = UDim2.new(0, 18, 0, 1);
+
+        local lol = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(1, -18, 0, -2 + YSize)}, 'Out', 'Quad')
+        local lol2 = TweenService:Create(BottomColor, tweenInfo, {Position = UDim2.new(0, -1, 0, -2 + YSize)}, 'Out', 'Quad')
     
         task.spawn(function()
             while task.wait() do
@@ -2471,7 +2471,6 @@ function Library:Notify(Text, Time, warning, showtime)
             end
         end)
     end
-
 
     pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 2, 0, YSize), 'Out', 'Quad', 0.4, true);
 
@@ -3104,19 +3103,6 @@ function Library:CreateWindow(...)
     return Window;
 end;
 
---Library:Notify("Test notification", 5, false, true)
-
---[[local Window = Library:CreateWindow({Title = 'Shambles Haxx', Center = true, AutoShow = true})
-
-local Tabs = {['Settings'] = Window:AddTab('Settings')} 
-
-Library:Notify("Test notification", 5, false, true)
-
-local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
-
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = false, Text = 'Menu keybind' }) 
-
-Library.KeybindFrame.Visible = true]]
+--Library:Notify("Hi this is a notification test", 5, "line");
 
 return Library;
