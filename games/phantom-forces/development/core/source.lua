@@ -1811,7 +1811,11 @@ do
                                         if HealthNumber.Center ~= false then
                                             HealthNumber.Center = false
                                         end
-                                        HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Health.To.Y - 3)
+                                        if Toggles[Group.."EspHealthBar"].Value then
+                                            HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Health.To.Y - 3)
+                                        else
+                                            HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Pos.Y - 3)
+                                        end
 
                                         if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
                                             if HealthNumber.Color ~= Options.ColorTarget.Value then
