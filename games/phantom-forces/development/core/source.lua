@@ -189,6 +189,7 @@ local fps                       = 0
 local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake, gsway = game_client.firearm_object.gunSway, wsway = game_client.firearm_object.walkSway}
 local ignorething
 local BarrelPos
+local RPos
 
 local gunicons = {
     ["1858 CARBINE"] = {"iVBORw0KGgoAAAANSUhEUgAAADIAAAAJCAYAAABwgn/fAAABHUlEQVR4nNXUTyuEURQG8N/LSEiSv7GzseMjkI/B3sqSvY/hYxBJsZCVwUIRamRnMyl/R2ia1+K+Y2YxmsHL5Knbvfd07j3Pec7pRHEcSwkjGMVSla0dByhW2frQg1sU8JZC7IkoxURacY1BRImtiEwN3wfcIMYmnn8avFaQr6IFk5jDkIrCbVjAPHI4w4lQiWPcpRD7A9UV6cAAhpO9v+pePndiJSE1jRlMoVdQN48dvGAVu3hKk/BniOI4XsQyur75Rw6H2BKUvhd6/9UfJUFIJMI5xht8k8cG9oRe30/2Arrx+As86yIjtEShjt8p1pOVRSmxtwvKl9GUJAgVGcOlyqQp4UIgnMU2rppDr3FkMIs1Yd5ncSS0yr/CO58sURmvjH21AAAAAElFTkSuQmCC", 50, 9},
@@ -527,6 +528,8 @@ getgenv().Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), 
 local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot')
 RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
 RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+RageBot:AddToggle('RageFirePos', {Text = 'Fire Position Scanning'})
+RageBot:AddSlider('RageFirePosAmount', {Text = 'Studs', Default = 3, Min = 0, Max = 8, Rounding = 0})
 
 local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim')
 AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
@@ -1497,7 +1500,7 @@ do
         local result = workspace:Raycast(origin, direction, raycastparameters)
         return result and result.Instance, result and result.Position, result and result.Normal
     end
-
+    
     local function bulletcheck(o, t, p)
         if p <= 0 then
             return false
@@ -1526,6 +1529,52 @@ do
         return true
     end
 
+    local function scanplayer(s, d, r, e) -- origin, target, radius, penetrationdepth
+        local c = CFrame.new(s, d)
+    
+        for p = 1, 2 do
+            p = (p - 1) * 45
+            local cf = c * CFrame.Angles(0, math.rad(p), 0)
+    
+            for i = 1, 2 do
+                i = i * 45
+                
+                for k, o in pairs({
+                    cf,
+                    cf * CFrame.Angles(math.rad(i), 0, 0),
+                    cf * CFrame.Angles(-math.rad(i), 0, 0)
+                }) do
+                    local v = (o * CFrame.new(0, 0, -r)).Position
+    
+                    if bulletcheck(v, d, e) then
+                        return v
+                    end
+                end
+                
+                for k, o in pairs({
+                    cf,
+                    cf * CFrame.Angles(0, 0, -math.rad(i)),
+                    cf * CFrame.Angles(0, 0, math.rad(i))
+                }) do
+                    local v = (o * CFrame.new(r, 0, 0)).Position
+    
+                    if bulletcheck(v, d, e) then
+                        return v
+                    end
+                    if p == 0 then
+                        local q = (o * CFrame.new(-r, 0, 0)).Position
+    
+                        if bulletcheck(q, d, e) then
+                            return q
+                        end
+                    end
+                end
+            end
+        end
+        
+        return s
+    end
+
     local lol = 0
 
     local function fireratecheck(firerate)
@@ -1539,18 +1588,28 @@ do
     end
 
     do -- Cheat Functions
-        do -- Rage Bot
+        do -- Rage Bot   
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friends, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
-                        local traj = game_client.physics.trajectory(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)
-                        if bulletcheck(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
+                        if Toggles.RageFirePos.Value then
+                            if RPos ~= scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) then
+                                RPos = scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
+                            end
+                        else
+                            RPos = BarrelPos
+                        end
+                        local traj = game_client.physics.trajectory(RPos, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)                   
+                        
+                        tableinfo.firepos = RPos
+
+                        if bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
                             debug.setupvalue(game_client.firearm_object.fireRound, 10, debug.getupvalue(game_client.firearm_object.fireRound, 10) + 1)
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
                                 debug.getupvalue(game_client.firearm_object.fireRound, 10),
                             }
-
+                            
                             ragetarget = v
 
                             game_client.network:send("newbullets", tableinfo, game_client.game_clock.getTime())
@@ -1567,7 +1626,7 @@ do
             Library:GiveSignal(rs.RenderStepped:Connect(function()
                 if game_client.LocalPlayer.isAlive() then
                     tableinfo.camerapos = game_client.LocalPlayer.getCharacterObject()._rootPart.Parent.Head.Position
-                    tableinfo.firepos = BarrelPos
+                    tableinfo.firepos = RPos
                 end
                 
                 for i,v in pairs(Players:GetPlayers()) do
