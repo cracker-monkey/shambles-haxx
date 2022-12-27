@@ -183,13 +183,66 @@ local CrosshairRightBorder      = Crosshair.RightBorder
 local CrosshairTopBorder        = Crosshair.TopBorder
 local CrosshairBottomBorder     = Crosshair.BottomBorder
 local organizedPlayers          = {}
-local ragetarget                = nil
+local rage                      = {target = nil, lastf = 0}
 local currentAngle              = 0
 local fps                       = 0
 local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake, gsway = game_client.firearm_object.gunSway, wsway = game_client.firearm_object.walkSway}
+local raycastparameters         = RaycastParams.new()
+local tableinfo                 = { firepos = BarrelPos, bullets = {}, camerapos = BarrelPos, }
 local ignorething
 local BarrelPos
 local RPos
+getgenv().Friends = {}
+
+function sounds()
+    local list = listfiles("shambles haxx/Configs/sounds")
+
+    local sounds = {}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.mp3' or file:sub(-4) == '.wav' then
+            local pos = file:find('.mp3', 1, true) or file:find('.wav', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(sounds, file:sub(pos + 1, start - 1))
+            end
+        end
+    end
+
+    return sounds;
+end 
+
+function icons()
+    local list = listfiles("shambles haxx/Configs/icons")
+
+    local icons = {"N/A"}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.png' then
+            local pos = file:find('.png', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(icons, file:sub(pos + 1, start - 1))
+            end
+        end
+    end
+
+    return icons;
+end 
 
 local gunicons = {
     ["1858 CARBINE"] = {"iVBORw0KGgoAAAANSUhEUgAAADIAAAAJCAYAAABwgn/fAAABHUlEQVR4nNXUTyuEURQG8N/LSEiSv7GzseMjkI/B3sqSvY/hYxBJsZCVwUIRamRnMyl/R2ia1+K+Y2YxmsHL5Knbvfd07j3Pec7pRHEcSwkjGMVSla0dByhW2frQg1sU8JZC7IkoxURacY1BRImtiEwN3wfcIMYmnn8avFaQr6IFk5jDkIrCbVjAPHI4w4lQiWPcpRD7A9UV6cAAhpO9v+pePndiJSE1jRlMoVdQN48dvGAVu3hKk/BniOI4XsQyur75Rw6H2BKUvhd6/9UfJUFIJMI5xht8k8cG9oRe30/2Arrx+As86yIjtEShjt8p1pOVRSmxtwvKl9GUJAgVGcOlyqQp4UIgnMU2rppDr3FkMIs1Yd5ncSS0yr/CO58sURmvjH21AAAAAElFTkSuQmCC", 50, 9},
@@ -525,380 +578,360 @@ local stringsub_table = {
 
 getgenv().Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings'), Lua = Window:AddTab("Lua")} 
 
-local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot')
-RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
-RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-RageBot:AddToggle('RageFirePos', {Text = 'Fire Position Scanning'})
-RageBot:AddSlider('RageFirePosAmount', {Text = 'Studs', Default = 3, Min = 0, Max = 8, Rounding = 0})
-
-local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim')
-AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
-AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
-AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
-AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
-AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
-AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
-AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
-AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
-AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
-
-local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist')
-AimAssist:AddToggle('AimEnabled', {Text = 'Enabled'}):AddKeyPicker('AimKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Aim Assist', NoUI = false})
-AimAssist:AddSlider('AimFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
-AimAssist:AddSlider('AimHorizontal', {Text = 'Horizontal Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
-AimAssist:AddSlider('AimVertical', {Text = 'Vertical Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
-AimAssist:AddToggle('AimVisCheck', {Text = 'Visible Check'})
-AimAssist:AddToggle('AimTeam', {Text = 'Target Teammates'})
-AimAssist:AddDropdown('AimHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-AimAssist:AddLabel("If your using high sensitivity make your smoothing higher!", true)
-
-local SilentAim = Tabs.Legit:AddRightGroupbox('Silent Aim')
-SilentAim:AddToggle('SilentEnabled', {Text = 'Enabled'}):AddKeyPicker('SilentKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Silent Aim', NoUI = false})
-SilentAim:AddSlider('SilentFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
-SilentAim:AddSlider('SilentHitchance', {Text = 'Hit Chance', Default = 80, Min = 1, Max = 100, Rounding = 0})
-SilentAim:AddToggle('SilentVisCheck', {Text = 'Visible Check'})
-SilentAim:AddToggle('SilentTeam', {Text = 'Target Teammates'})
-SilentAim:AddDropdown('SilentHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-
-local EnemyEspBox = Tabs.Visuals:AddLeftTabbox()
-local EnemyEsp = EnemyEspBox:AddTab('Enemy ESP')
-local TeamEsp = EnemyEspBox:AddTab('Team ESP')
-local SettingsEsp = EnemyEspBox:AddTab('Settings')
-
-EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
-EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-EnemyEsp:AddToggle('EnemyEspIcon', {Text = 'Weapon Icon'})
-EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
-EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-EnemyEsp:AddDivider()
-EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('EnemyColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-EnemyEsp:AddToggle('EnemyEspChamsSine', {Text = 'Pulse'})
-EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-EnemyEsp:AddSlider('EnemyEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-
-TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
-TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-TeamEsp:AddToggle('TeamEspIcon', {Text = 'Weapon Icon'})
-TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
-TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-TeamEsp:AddDivider()
-TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('TeamColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-TeamEsp:AddToggle('TeamEspChamsSine', {Text = 'Pulse'})
-TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-TeamEsp:AddSlider('TeamEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-
-SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
-SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
-SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
-SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
-SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
-
-local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP')
-WeaponEsp:AddToggle('DroppedWeapon', {Text = 'Weapon'}):AddColorPicker('ColorDroppedWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-WeaponEsp:AddToggle('DroppedAmmo', {Text = 'Ammo'}):AddColorPicker('ColorDroppedAmmo', {Default = Color3.fromRGB(255, 255, 255), Title = 'Ammo Color'})
-WeaponEsp:AddToggle('DroppedIcon', {Text = 'Weapon Icon'})
-
-local InterfaceBox = Tabs.Visuals:AddRightTabbox()
-local CursorEsp = InterfaceBox:AddTab('Cursor')
-local FovEsp = InterfaceBox:AddTab('Field Of View')
-
-CursorEsp:AddToggle('CursorEnabled', {Text = 'Enabled'}):AddColorPicker('ColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('ColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
-CursorEsp:AddSlider('CursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
-CursorEsp:AddSlider('CursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
-CursorEsp:AddSlider('CursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
-CursorEsp:AddToggle('CursorBarrel', {Text = 'Follow Barrel'})
-CursorEsp:AddToggle('CursorBorder', {Text = 'Border'})
-CursorEsp:AddToggle('CursorSpin', {Text = 'Spin'})
-CursorEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
-
-FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
-FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
-FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
-
-local OtherEspBox = Tabs.Visuals:AddRightTabbox()
-local LocalEsp = OtherEspBox:AddTab('Local Player')
-local WorldEsp = OtherEspBox:AddTab('World Visuals')
-
-LocalEsp:AddToggle('ViewModel', {Text = 'Viewmodel Changer'})
-LocalEsp:AddSlider('ViewModelX', {Text = 'X Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
-LocalEsp:AddSlider('ViewModelY', {Text = 'Y Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
-LocalEsp:AddSlider('ViewModelZ', {Text = 'Z Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
-LocalEsp:AddSlider('ViewModelPitch', {Text = 'Pitch', Default = 0, Min = -360, Max = 360, Rounding = 0})
-LocalEsp:AddSlider('ViewModelYaw', {Text = 'Yaw', Default = 0, Min = -360, Max = 360, Rounding = 0})
-LocalEsp:AddSlider('ViewModelRoll', {Text = 'Roll', Default = 0, Min = -360, Max = 360, Rounding = 0})
-LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
-LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1})
-LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
-LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
-LocalEsp:AddToggle('AGunChams', {Text = 'Gun Chams'}):AddColorPicker('AColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'})
-LocalEsp:AddSlider('AGunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('AGunChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
-LocalEsp:AddDropdown('AGunChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
-LocalEsp:AddToggle('AArmChams', {Text = 'Arm Chams'}):AddColorPicker('AColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'})
-LocalEsp:AddSlider('AArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('AArmChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
-LocalEsp:AddDropdown('AArmChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
-LocalEsp:AddToggle('GunChams', {Text = 'Highlight Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Outline Chams Color'})
-LocalEsp:AddSlider('GunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('GunOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('ArmChams', {Text = 'Highlight Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Outline Chams Color'})
-LocalEsp:AddSlider('ArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddSlider('ArmOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('BulletTracers', {Text = 'Bullet Tracers'}):AddColorPicker('ColorBulletTracers', {Default = Color3.fromRGB(255, 255, 255), Title = 'Bullet Tracers Color'})
-LocalEsp:AddSlider('BulletTracersTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
-LocalEsp:AddToggle('NoSway', {Text = 'No Sway'}) 
-LocalEsp:AddToggle('NoShake', {Text = 'No Shake'}) 
-
-WorldEsp:AddToggle('WorldAmbience', {Text = 'Ambience'}):AddColorPicker('ColorInsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Inside Ambience Color'}):AddColorPicker('ColorOutsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Outside Ambience Color'})
-WorldEsp:AddToggle('WorldTime', {Text = 'Force Time'})
-WorldEsp:AddSlider('WorldTimeAmount', {Text = 'Custom Time', Default = 12, Min = 0, Max = 24, Rounding = 0})
-WorldEsp:AddToggle('WorldSaturation', {Text = 'Custom Saturation'}):AddColorPicker('ColorSaturation', {Default = Color3.fromRGB(255, 255, 255), Title = 'Saturation Color'})
-WorldEsp:AddSlider('WorldSaturationAmount', {Text = 'Saturation Density', Default = 2, Min = 0, Max = 100, Rounding = 0})
-
-local Movement = Tabs.Misc:AddLeftGroupbox('Movement')
-Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
-Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
-Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
-Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
-Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
-Movement:AddToggle('MovementFall', {Text = 'No Fall Damage'})
-
-local Exploits = Tabs.Misc:AddLeftGroupbox('Exploits')
-Exploits:AddSlider('ExploitsFireRate', {Text = 'Fire Rate', Default = 100, Min = 50, Max = 5000, Rounding = 0})
-
-local function sounds()
-    local list = listfiles("shambles haxx/Configs/sounds")
-
-    local sounds = {}
-    for i = 1, #list do
-        local file = list[i]
-        if file:sub(-4) == '.mp3' or file:sub(-4) == '.wav' then
-            local pos = file:find('.mp3', 1, true) or file:find('.wav', 1, true)
-            local start = pos
-
-            local char = file:sub(pos, pos)
-            while char ~= '/' and char ~= '\\' and char ~= '' do
-                pos = pos - 1
-                char = file:sub(pos, pos)
-            end
-
-            if char == '/' or char == '\\' then
-                table.insert(sounds, file:sub(pos + 1, start - 1))
-            end
-        end
+do -- Rage Tab
+    local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot') do
+        RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
+        RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+        RageBot:AddToggle('RageFirePos', {Text = 'Fire Position Scanning'})
+        RageBot:AddSlider('RageFirePosAmount', {Text = 'Studs', Default = 3, Min = 0, Max = 8, Rounding = 0})
     end
 
-    return sounds;
-end 
-
-
-local Extra = Tabs.Misc:AddRightGroupbox('Extra')
-Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
-Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
-Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddDropdown('ExtraHeadsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Head Sound'})
-Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
-Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddDropdown('ExtraBodysoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Body Sound'})
-Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
-Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
-Extra:AddDropdown('ExtraGunsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Gun Sound'})
-Extra:AddButton('Refresh', function()
-    Options.ExtraHeadsoundId.Values = sounds()
-    Options.ExtraHeadsoundId:SetValues()
-    Options.ExtraHeadsoundId:SetValue()
-
-    Options.ExtraBodysoundId.Values = sounds()
-    Options.ExtraBodysoundId:SetValues()
-    Options.ExtraBodysoundId:SetValue()
-
-    Options.ExtraGunsoundId.Values = sounds()
-    Options.ExtraGunsoundId:SetValues()
-    Options.ExtraGunsoundId:SetValue()
-end)
-Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
-Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
-Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
-Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
-Extra:AddToggle('GameVotekick', {Text = 'Join new game on votekick'})
-Extra:AddButton('Join New Game', function()
-    local jobid = ""
-
-    local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
-
-    for Index, Value in pairs(Servers.data) do
-        if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
-            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
-            jobid = tostring(Value.id)
-        end
+    local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim') do
+        AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
+        AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
+        AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
+        AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
+        AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
+        AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
+        AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
     end
-
-    Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
-end)
-
-Toggles.AutoDeploy:OnChanged(function()
-    if Toggles.AutoDeploy.Value then
-        game_client.character_interface.spawn()
-    end
-
-    alive = Toggles.AutoDeploy.Value
-    t = tick()
-end)
-
-
-local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
-
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
-
-Library.ToggleKeybind = Options.MenuKeybind
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings() 
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
-ThemeManager:SetFolder(shambles.workspace.."/Configs/"..shambles.game)
-SaveManager:SetFolder(shambles.workspace .."/Configs/"..shambles.game)
-SaveManager:BuildConfigSection(Tabs['Settings']) 
-ThemeManager:ApplyToTab(Tabs['Settings'])
-
-getgenv().Friends = {}
-
-local PlayerList = Tabs.Settings:AddRightGroupbox("Player List")
-PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
-PlayerList:AddButton('Refresh', function()
-    for i,v in pairs(Players:GetPlayers()) do   
-        if not table.find(Options.PlayerList.Values, v.Name) and v.Name ~= LocalPlayer.Name then
-            table.insert(Options.PlayerList.Values, v.Name)
-            Options.PlayerList:SetValues()
-            Options.PlayerList:SetValue(nil)
-        end
-    end
-end)
-
-PlayerList:AddButton('Friend', function()
-    if not table.find(Friends, Options.PlayerList.Value) then
-        table.insert(Friends, Options.PlayerList.Value)
-        Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
-    elseif table.find(Friends, Options.PlayerList.Value) then
-        for i1, v1 in pairs(Options.PlayerList.Values) do
-            if Options.PlayerList.Value == v1 then
-                table.remove(Friends, i1)
-            end
-        end
-        Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
-    end
-end)
-
-local function icons()
-    local list = listfiles("shambles haxx/Configs/icons")
-
-    local icons = {"N/A"}
-    for i = 1, #list do
-        local file = list[i]
-        if file:sub(-4) == '.png' then
-            local pos = file:find('.png', 1, true)
-            local start = pos
-
-            local char = file:sub(pos, pos)
-            while char ~= '/' and char ~= '\\' and char ~= '' do
-                pos = pos - 1
-                char = file:sub(pos, pos)
-            end
-
-            if char == '/' or char == '\\' then
-                table.insert(icons, file:sub(pos + 1, start - 1))
-            end
-        end
-    end
-
-    return icons;
-end 
-
-local Interface = Tabs.Settings:AddRightGroupbox("Interface")
-Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
-Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
-Interface:AddDropdown('WatermarkIcon', {Values = icons(), Default = 1, Multi = false, Text = 'Custom Logo'})
-Interface:AddButton('Refresh', function()
-    Options.WatermarkIcon.Values = icons()
-    Options.WatermarkIcon:SetValues()
-    Options.WatermarkIcon:SetValue("N/A")
-end)
-Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx | {user} | {fps} fps | {ping} ms | {version}', Numeric = false, Finished = false, Text = 'Custom Watermark', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}\n{time}, {date}"})   
-Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
-Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
-SaveManager:LoadAutoloadConfig()
-
-if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
-    Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
-else
-    Watermark.Icon.Data = readfile("")
 end
 
-Options.WatermarkIcon:OnChanged(function()
+do -- Legit Tab
+    local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist') do
+        AimAssist:AddToggle('AimEnabled', {Text = 'Enabled'}):AddKeyPicker('AimKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Aim Assist', NoUI = false})
+        AimAssist:AddSlider('AimFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
+        AimAssist:AddSlider('AimHorizontal', {Text = 'Horizontal Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
+        AimAssist:AddSlider('AimVertical', {Text = 'Vertical Smoothing', Default = 20, Min = 1, Max = 100, Rounding = 0})
+        AimAssist:AddToggle('AimVisCheck', {Text = 'Visible Check'})
+        AimAssist:AddToggle('AimTeam', {Text = 'Target Teammates'})
+        AimAssist:AddDropdown('AimHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+        AimAssist:AddLabel("If your using high sensitivity make your smoothing higher!", true)
+    end
+
+    local SilentAim = Tabs.Legit:AddRightGroupbox('Silent Aim') do
+        SilentAim:AddToggle('SilentEnabled', {Text = 'Enabled'}):AddKeyPicker('SilentKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Silent Aim', NoUI = false})
+        SilentAim:AddSlider('SilentFov', {Text = 'Field Of View', Default = 30, Min = 1, Max = 360, Rounding = 0})
+        SilentAim:AddSlider('SilentHitchance', {Text = 'Hit Chance', Default = 80, Min = 1, Max = 100, Rounding = 0})
+        SilentAim:AddToggle('SilentVisCheck', {Text = 'Visible Check'})
+        SilentAim:AddToggle('SilentTeam', {Text = 'Target Teammates'})
+        SilentAim:AddDropdown('SilentHitscan', {Values = { "Head", "Torso", "Closest" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+    end
+end
+
+do -- Visuals Tab
+    local EspBox = Tabs.Visuals:AddLeftTabbox() do
+        local EnemyEsp = EspBox:AddTab('Enemy ESP') do
+            EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
+            EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+            EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+            EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+            EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+            EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+            EnemyEsp:AddToggle('EnemyEspIcon', {Text = 'Weapon Icon'})
+            EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+            EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+            EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
+            EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+            EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+            EnemyEsp:AddDivider()
+            EnemyEsp:AddToggle('EnemyEspHighlights', {Text = 'Highlights'}):AddColorPicker('EnemyColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('EnemyColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
+            EnemyEsp:AddToggle('EnemyEspHighlightsSine', {Text = 'Pulse'})
+            EnemyEsp:AddSlider('EnemyEspHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            EnemyEsp:AddSlider('EnemyEspOutlineHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        end
+
+        local TeamEsp = EspBox:AddTab('Team ESP') do
+            TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
+            TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+            TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+            TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+            TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+            TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+            TeamEsp:AddToggle('TeamEspIcon', {Text = 'Weapon Icon'})
+            TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+            TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+            TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
+            TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+            TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+            TeamEsp:AddDivider()
+            TeamEsp:AddToggle('TeamEspHighlights', {Text = 'Highlights'}):AddColorPicker('TeamColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('TeamColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
+            TeamEsp:AddToggle('TeamEspHighlightsSine', {Text = 'Pulse'})
+            TeamEsp:AddSlider('TeamEspHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            TeamEsp:AddSlider('TeamEspOutlineHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+        end
+
+        local SettingsEsp = EspBox:AddTab('Settings') do
+            SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
+            SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
+            SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
+            SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
+            SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
+        end
+    end
+
+    local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP') do
+        WeaponEsp:AddToggle('DroppedWeapon', {Text = 'Weapon'}):AddColorPicker('ColorDroppedWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+        WeaponEsp:AddToggle('DroppedAmmo', {Text = 'Ammo'}):AddColorPicker('ColorDroppedAmmo', {Default = Color3.fromRGB(255, 255, 255), Title = 'Ammo Color'})
+        WeaponEsp:AddToggle('DroppedIcon', {Text = 'Weapon Icon'})
+    end
+
+    local InterfaceBox = Tabs.Visuals:AddRightTabbox() do
+        local CursorEsp = InterfaceBox:AddTab('Cursor') do
+            CursorEsp:AddToggle('CursorEnabled', {Text = 'Enabled'}):AddColorPicker('ColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('ColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            CursorEsp:AddSlider('CursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            CursorEsp:AddSlider('CursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            CursorEsp:AddSlider('CursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            CursorEsp:AddToggle('CursorBarrel', {Text = 'Follow Barrel'})
+            CursorEsp:AddToggle('CursorBorder', {Text = 'Border'})
+            CursorEsp:AddToggle('CursorSpin', {Text = 'Spin'})
+            CursorEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
+        end
+
+        local FovEsp = InterfaceBox:AddTab('Field Of View') do
+            FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
+            FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
+            FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
+        end
+    end
+
+    local OtherEspBox = Tabs.Visuals:AddRightTabbox() do
+        local LocalEsp = OtherEspBox:AddTab('Local Player') do
+            LocalEsp:AddToggle('ViewModel', {Text = 'Viewmodel Changer'})
+            LocalEsp:AddSlider('ViewModelX', {Text = 'X Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+            LocalEsp:AddSlider('ViewModelY', {Text = 'Y Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+            LocalEsp:AddSlider('ViewModelZ', {Text = 'Z Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
+            LocalEsp:AddSlider('ViewModelPitch', {Text = 'Pitch', Default = 0, Min = -360, Max = 360, Rounding = 0})
+            LocalEsp:AddSlider('ViewModelYaw', {Text = 'Yaw', Default = 0, Min = -360, Max = 360, Rounding = 0})
+            LocalEsp:AddSlider('ViewModelRoll', {Text = 'Roll', Default = 0, Min = -360, Max = 360, Rounding = 0})
+            LocalEsp:AddToggle('ViewModelBob', {Text = 'Custom Gun Bob'})
+            LocalEsp:AddSlider('ViewModelBobSpeed', {Text = 'Speed', Default = 50, Min = 1, Max = 200, Rounding = 0})
+            LocalEsp:AddSlider('ViewModelBobAmount', {Text = 'Amount', Default = 3, Min = 0, Max = 10, Rounding = 5})
+            LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
+            LocalEsp:AddSlider('ThirdPersonX', {Text = 'X Position', Default = 0, Min = -100, Max = 100, Rounding = 1}) 
+            LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
+            LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
+            LocalEsp:AddToggle('AGunChams', {Text = 'Gun Chams'}):AddColorPicker('AColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'})
+            LocalEsp:AddSlider('AGunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('AGunChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
+            LocalEsp:AddDropdown('AGunChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
+            LocalEsp:AddToggle('AArmChams', {Text = 'Arm Chams'}):AddColorPicker('AColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'})
+            LocalEsp:AddSlider('AArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('AArmChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
+            LocalEsp:AddDropdown('AArmChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
+            LocalEsp:AddToggle('GunChams', {Text = 'Highlight Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Outline Chams Color'})
+            LocalEsp:AddSlider('GunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('GunOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddToggle('ArmChams', {Text = 'Highlight Arm Chams'}):AddColorPicker('ColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Chams Color'}):AddColorPicker('ColorArmOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Arm Outline Chams Color'})
+            LocalEsp:AddSlider('ArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('ArmOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddToggle('BulletTracers', {Text = 'Bullet Tracers'}):AddColorPicker('ColorBulletTracers', {Default = Color3.fromRGB(255, 255, 255), Title = 'Bullet Tracers Color'})
+            LocalEsp:AddSlider('BulletTracersTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddToggle('NoSway', {Text = 'No Sway'}) 
+            LocalEsp:AddToggle('NoShake', {Text = 'No Shake'}) 
+        end
+
+        local WorldEsp = OtherEspBox:AddTab('World Visuals') do
+            WorldEsp:AddToggle('WorldAmbience', {Text = 'Ambience'}):AddColorPicker('ColorInsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Inside Ambience Color'}):AddColorPicker('ColorOutsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Outside Ambience Color'})
+            WorldEsp:AddToggle('WorldTime', {Text = 'Force Time'})
+            WorldEsp:AddSlider('WorldTimeAmount', {Text = 'Custom Time', Default = 12, Min = 0, Max = 24, Rounding = 0})
+            WorldEsp:AddToggle('WorldSaturation', {Text = 'Custom Saturation'}):AddColorPicker('ColorSaturation', {Default = Color3.fromRGB(255, 255, 255), Title = 'Saturation Color'})
+            WorldEsp:AddSlider('WorldSaturationAmount', {Text = 'Saturation Density', Default = 2, Min = 0, Max = 100, Rounding = 0})
+        end
+    end
+end
+
+do -- Misc Tab
+    local Movement = Tabs.Misc:AddLeftGroupbox('Movement') do
+        Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
+        Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
+        Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
+        Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 80, Rounding = 0})
+        Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
+        Movement:AddToggle('MovementFall', {Text = 'No Fall Damage'})
+    end
+
+    local Exploits = Tabs.Misc:AddLeftGroupbox('Exploits W.I.P') do
+        Exploits:AddSlider('ExploitsFireRate', {Text = 'Fire Rate', Default = 100, Min = 50, Max = 5000, Rounding = 0})
+    end
+
+    local Extra = Tabs.Misc:AddRightGroupbox('Extra') do
+        Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
+        Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
+        Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddDropdown('ExtraHeadsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Head Sound'})
+        Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
+        Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddDropdown('ExtraBodysoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Body Sound'})
+        Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
+        Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddDropdown('ExtraGunsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Gun Sound'})
+        Extra:AddButton('Refresh', function()
+            Options.ExtraHeadsoundId.Values = sounds()
+            Options.ExtraHeadsoundId:SetValues()
+            Options.ExtraHeadsoundId:SetValue()
+
+            Options.ExtraBodysoundId.Values = sounds()
+            Options.ExtraBodysoundId:SetValues()
+            Options.ExtraBodysoundId:SetValue()
+
+            Options.ExtraGunsoundId.Values = sounds()
+            Options.ExtraGunsoundId:SetValues()
+            Options.ExtraGunsoundId:SetValue()
+        end)
+        Extra:AddToggle('ChatSpam', {Text = 'Chat Spam'})
+        Extra:AddToggle('ChatSpamEmojis', {Text = 'Emojis'})
+        Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
+        Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
+        Extra:AddToggle('GameVotekick', {Text = 'Join new game on votekick'})
+        Extra:AddButton('Join New Game', function()
+            local jobid = ""
+
+            local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+
+            for Index, Value in pairs(Servers.data) do
+                if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+                    jobid = tostring(Value.id)
+                end
+            end
+
+            Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
+        end)
+    end
+end
+
+do -- Settings Tab
+    local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu') do
+        MenuGroup:AddButton('Unload', function() Library:Unload() end)
+        MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
+    end
+
+    do -- Managers
+        Library.ToggleKeybind = Options.MenuKeybind
+        ThemeManager:SetLibrary(Library)
+        SaveManager:SetLibrary(Library)
+        SaveManager:IgnoreThemeSettings() 
+        SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
+        ThemeManager:SetFolder(shambles.workspace.."/Configs/"..shambles.game)
+        SaveManager:SetFolder(shambles.workspace .."/Configs/"..shambles.game)
+        SaveManager:BuildConfigSection(Tabs['Settings']) 
+        ThemeManager:ApplyToTab(Tabs['Settings'])
+    end
+
+    local PlayerList = Tabs.Settings:AddRightGroupbox("Player List") do
+        PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
+        PlayerList:AddButton('Refresh', function()
+            for i,v in pairs(Players:GetPlayers()) do   
+                if not table.find(Options.PlayerList.Values, v.Name) and v.Name ~= LocalPlayer.Name then
+                    table.insert(Options.PlayerList.Values, v.Name)
+                    Options.PlayerList:SetValues()
+                    Options.PlayerList:SetValue(nil)
+                end
+            end
+        end)
+
+        PlayerList:AddButton('Friend', function()
+            if not table.find(Friends, Options.PlayerList.Value) then
+                table.insert(Friends, Options.PlayerList.Value)
+                Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+            elseif table.find(Friends, Options.PlayerList.Value) then
+                for i1, v1 in pairs(Options.PlayerList.Values) do
+                    if Options.PlayerList.Value == v1 then
+                        table.remove(Friends, i1)
+                    end
+                end
+                Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+            end
+        end)
+    end
+
+    local Interface = Tabs.Settings:AddRightGroupbox("Interface") do
+        Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
+        Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
+        Interface:AddDropdown('WatermarkIcon', {Values = icons(), Default = 1, Multi = false, Text = 'Custom Logo'})
+        Interface:AddButton('Refresh', function()
+            Options.WatermarkIcon.Values = icons()
+            Options.WatermarkIcon:SetValues()
+            Options.WatermarkIcon:SetValue("N/A")
+        end)
+        Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx | {user} | {fps} fps | {ping} ms | {version}', Numeric = false, Finished = false, Text = 'Custom Watermark', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}\n{time}, {date}"})   
+        Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
+        Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
+        SaveManager:LoadAutoloadConfig()
+    end 
+end
+
+do -- Checks
     if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
         Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
     else
         Watermark.Icon.Data = readfile("")
     end
-end)
 
-Library:SetWatermarkVisibility(false)
-Library.KeybindFrame.Visible = Toggles.InterfaceKeybinds.Value
+    Options.WatermarkIcon:OnChanged(function()
+        if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
+            Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
+        else
+            Watermark.Icon.Data = readfile("")
+        end
+    end)
 
-Toggles.InterfaceKeybinds:OnChanged(function()
+    Library:SetWatermarkVisibility(false)
     Library.KeybindFrame.Visible = Toggles.InterfaceKeybinds.Value
-end)   
 
-load1 = tick()
+    Toggles.InterfaceKeybinds:OnChanged(function()
+        Library.KeybindFrame.Visible = Toggles.InterfaceKeybinds.Value
+    end)   
 
-Library:OnUnload(function()
-    for i,v in pairs (Players:GetPlayers()) do
-        if PLRDS[v] then
-            for i, v in pairs(PLRDS[v]) do
+    Toggles.AutoDeploy:OnChanged(function()
+        if Toggles.AutoDeploy.Value then
+            game_client.character_interface.spawn()
+        end
+
+        alive = Toggles.AutoDeploy.Value
+        t = tick()
+    end)
+
+    load1 = tick()
+
+    Library:OnUnload(function()
+        for i,v in pairs (Players:GetPlayers()) do
+            if PLRDS[v] then
+                for i, v in pairs(PLRDS[v]) do
+                    v:Remove()
+                end
+            end
+        end
+
+        for i,v in pairs(Crosshair) do
+            if v ~= nil then
                 v:Remove()
             end
         end
-    end
 
-    for i,v in pairs(Crosshair) do
-        if v ~= nil then
+        local third_person_object = fake_rep_object:getThirdPersonObject()
+        if third_person_object then
+            local character_model = third_person_object:popCharacterModel()
+            character_model:Destroy()
+            fake_rep_object:despawn()
+        end
+
+        for i,v in pairs(FCS) do
             v:Remove()
         end
-    end
 
-    local third_person_object = fake_rep_object:getThirdPersonObject()
-    if third_person_object then
-        local character_model = third_person_object:popCharacterModel()
-        character_model:Destroy()
-        fake_rep_object:despawn()
-    end
+        for i,v in pairs(Watermark) do
+            v:Remove()
+        end
 
-    for i,v in pairs(FCS) do
-        v:Remove()
-    end
+        Library.Unloaded = true
+    end)
+end
 
-    for i,v in pairs(Watermark) do
-        v:Remove()
-    end
-
-    Library.Unloaded = true
-end)
-
-wait(0.4)
+wait(0.1) -- Keep this because game breaks cause the UI loads slower then the modules and then Options table doesn't exist.
 
 do
     for _,Player in pairs(Players:GetPlayers()) do
@@ -939,11 +972,31 @@ do
     local solve = debug.getupvalue(game_client.physics.timehit, 2);
     local beams = {}
 
-    local function isVisible(position, ignore)
+    task.spawn(function()
+        while task.wait(Options.ChatSpamDelay.Value) do
+            if Toggles.ChatSpam.Value and Library.Unloaded ~= false and game_client.LocalPlayer.isAlive() then
+                local lol = ""
+    
+                if Toggles.ChatSpamEmojis.Value and Toggles.ChatSpamSymbols.Value then
+                    lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
+                elseif Toggles.ChatSpamEmojis.Value then
+                    lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
+                elseif Toggles.ChatSpamSymbols.Value then
+                    lol = string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10))
+                else
+                    lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
+                end
+    
+                game_client.network.send(nil, "chatted", lol) 
+            end
+        end
+    end)
+
+    function isVisible(position, ignore)
         return #Camera:GetPartsObscuringTarget({ position }, ignore) == 0;
     end
 
-    local function NameToIcon(name)
+    function NameToIcon(name)
         local tempimage = gunicons[name]
     
         if tempimage ~= nil then
@@ -981,13 +1034,13 @@ do
         return beam
     end
 
-    local function find_2d_distance( pos1, pos2 )
+    function find_2d_distance( pos1, pos2 )
         local dx = pos1.X - pos2.X
         local dy = pos1.Y - pos2.Y
         return math.sqrt ( dx * dx + dy * dy )
     end
 
-    local function getClosest(dir, origin, ignore)
+    function getClosest(dir, origin, ignore)
         local _position, _entry;
 
         game_client.replication.operateOnAllEntries(function(player, entry)
@@ -1013,14 +1066,14 @@ do
         return _position, _entry;
     end
 
-    local function Mouse_Move(pos, smoothx, smoothy)
+    function Mouse_Move(pos, smoothx, smoothy)
         local mouse = LocalPlayer:GetMouse()
         local targetPos = Camera:WorldToScreenPoint(pos)
         local mousePos = Camera:WorldToScreenPoint(mouse.Hit.p)
         mousemoverel((targetPos.X - mousePos.X) / smoothx, (targetPos.Y - mousePos.Y) / smoothy)
     end
 
-    local function trajectory(dir, velocity, accel, speed)
+    function trajectory(dir, velocity, accel, speed)
         local t1, t2, t3, t4 = solve(
             accel:Dot(accel) * 0.25,
             accel:Dot(velocity),
@@ -1106,330 +1159,8 @@ do
         part.Transparency =  1 - trans
         part.Reflectance = reflectance / 10 
     end
-
-    local send = game_client.network.send
-
-    local tableinfo = {
-        firepos = BarrelPos,
-        bullets = {},
-        camerapos = BarrelPos,
-    }
-
-    game_client.network.send = function(self, command, ...)
-        local args = { ... }
-
-        if command == "debug" then
-            if args[1] == "Server Kick Message: You have been votekicked out of the server!" and Toggles.GameVotekick.Value then
-                local jobid = ""
-
-                local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
-            
-                for Index, Value in pairs(Servers.data) do
-                    if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
-                        jobid = tostring(Value.id)
-                    end
-                end
-            
-                Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
-            end
-        end
-
-        if command == "newbullets" then 
-            if Toggles.ExtraGunSound.Value then
-                local gun = Instance.new("Sound")
-                gun.Looped = false   
-                gun.Volume = Options.ExtraGunsoundVolume.Value / 10
-                gun.Parent = workspace
-
-                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3") then
-                    gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3")
-                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav") then
-                    gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav")
-                end    
-
-                gun:Play()
-            end
-
-            if Toggles.BulletTracers.Value then
-                for k = 1, #args[1].bullets do
-                    local bullet = args[1].bullets[k]
-                    local origin = args[1].firepos
-                    local attach_origin = Instance.new("Attachment", workspace.Terrain)
-                    attach_origin.Position = origin
-                    local ending = origin + (type(bullet[1]) == "table" and bullet[1].unit.Unit or bullet[1].Unit) * 300
-                    local attach_ending = Instance.new("Attachment", workspace.Terrain)
-                    attach_ending.Position = ending
-                    local beam = CreateBeam(attach_origin, attach_ending)
-                    beam.Parent = workspace
-                end
-            end
-        end
-
-        if command == "repupdate" then   
-            if Toggles.AntiHide.Value and game_client.LocalPlayer.isAlive() then
-                args[1] = args[1] - Vector3.new(0, 1.2, 0)
-            end
-            
-            if Toggles.AntiEnabled.Value and Options.AntiKey:GetState() then
-                --{ "Off", "Up", "Down", "Random", "Sine Wave" }
-                --{Values = { "Off", "Backwards", "Spin", "Random" }
-
-                local AntiAimPitch = args[2].x
-                local AntiAimYaw = args[2].y
-                local newa
-
-                if Options.AntiPitch.Value == "Up" then
-                    AntiAimPitch = 1.5
-                elseif Options.AntiPitch.Value == "Down" then
-                    AntiAimPitch = -1.5
-                elseif Options.AntiPitch.Value == "Random" then
-                    AntiAimPitch = math.random(-2, 2)
-                elseif Options.AntiPitch.Value == "Sine Wave" then
-                    AntiAimPitch = math.sin(tick() * Options.AntiSineWave.Value) * 2
-                elseif Options.AntiPitch.Value == "Custom" then
-                    AntiAimPitch = Options.AntiCustomPitch.Value / 2
-                end
-
-                if Options.AntiYaw.Value == "Backwards" then
-                    AntiAimYaw += math.pi
-                elseif Options.AntiYaw.Value == "Spin" then
-                    AntiAimYaw = (tick() * Options.AntiSpinRate.Value) % 12
-                elseif Options.AntiYaw.Value == "Random" then
-                    AntiAimYaw = math.random(99999)
-                elseif Options.AntiYaw.Value == "Sine Wave" then
-                    AntiAimYaw = math.sin(tick() * Options.AntiSineWave.Value) * 4
-                elseif Options.AntiYaw.Value == "Custom" then
-                    AntiAimYaw = Options.AntiCustomYaw.Value / 50
-                end
-                
-                newa = newa or Vector2.new(AntiAimPitch, AntiAimYaw)
-
-                args[2] = newa
-            end
-        end
-
-        if command == "bullethit" then
-            --Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), 2.5)
-            if Toggles.ExtraHeadsound.Value and tostring(args[3]) == "Head" then
-                local head = Instance.new("Sound")
-                head.Looped = false
-                head.Parent = workspace
-                head.Volume = Options.ExtraHeadsoundVolume.Value / 10
-
-                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3") then
-                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3")
-                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav") then
-                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav")
-                end
-
-                head:Play()
-            end
-
-            if Toggles.ExtraBodysound.Value and tostring(args[3]) == "Body" then
-                local body = Instance.new("Sound")
-                body.Looped = false
-                body.Parent = workspace            
-                body.Volume = Options.ExtraBodysoundVolume.Value / 10
-
-                if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3") then
-                    body.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3")
-                elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav") then
-                    head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav")
-                end    
-
-                body:Play()
-            end
-        end
-
-        if command == "falldamage" then
-            if Toggles.MovementFall.Value then
-                return
-            end
-        end
-
-        if command == "stance" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local stance = args[1]
-                third_person_object:setStance(stance)
-            end
-        end
-
-        if command == "aim" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local aim = args[1]
-                third_person_object:setAim(aim)
-            end
-        end
-
-        if command == "equip" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local weapon_index = args[1]
-                if weapon_index < 3 then
-                    third_person_object:equip(weapon_index)
-                elseif weapon_index == 3 then
-                    third_person_object:equipMelee(weapon_index)
-                end
-            end
-        end
-
-        if command == "sprint" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local sprinting = args[1]
-                third_person_object:setSprint(sprinting)
-            end
-        end
-
-        if command == "stab" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                third_person_object:stab()
-            end
-        end
-
-        if command == "spawn" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local character_model = third_person_object:popCharacterModel()
-                character_model:Destroy()
-                fake_rep_object:despawn()
-            end
-
-            local current_loadout = game_client.active_loadout.getActiveLoadoutData(game_client.player_data.getPlayerData())
-            fake_rep_object:spawn(nil, current_loadout)
-        end
-
-        if command == "forcereset" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local character_model = third_person_object._character
-                character_model:Destroy()
-                fake_rep_object:despawn()
-            end
-        end
-
-        if command == "swapweapon" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                local weapon_index = args[2]
-                local weapon_dropped = args[1]
-
-                if weapon_index < 3 then
-                    fake_rep_object._activeWeaponRegistry[weapon_index] = {
-                        weaponName = weapon_dropped.Gun.Value,
-                        weaponData = game_client.content_database.getWeaponData(weapon_dropped.Gun.Value),
-                    }
-                else
-                    fake_rep_object._activeWeaponRegistry[weapon_index] = {
-                        weaponName = weapon_dropped.Knife.Value,
-                        weaponData = game_client.content_database.getWeaponData(weapon_dropped.Knife.Value),
-                    }
-                end
-            end
-        end
-
-        if command == "repupdate" then
-            if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
-                local third_person_object = fake_rep_object:getThirdPersonObject()
-                if not third_person_object then
-                    local weapon_controller = game_client.weapon_controller_interface.getController()
-                    fake_rep_object._activeWeaponRegistry[1] = {
-                        weaponName = weapon_controller._activeWeaponRegistry[1]._weaponName, 
-                        weaponData = weapon_controller._activeWeaponRegistry[1]._weaponData, 
-                        attachmentData = weapon_controller._activeWeaponRegistry[1]._weaponAttachments, 
-                        camoData = weapon_controller._activeWeaponRegistry[1]._camoList
-                    }
-
-                    fake_rep_object._activeWeaponRegistry[2] = {
-                        weaponName = weapon_controller._activeWeaponRegistry[2]._weaponName, 
-                        weaponData = weapon_controller._activeWeaponRegistry[2]._weaponData, 
-                        attachmentData = weapon_controller._activeWeaponRegistry[2]._weaponAttachments, 
-                        camoData = weapon_controller._activeWeaponRegistry[2]._camoList
-                    }
-
-                    fake_rep_object._activeWeaponRegistry[3] = {
-                        weaponName = weapon_controller._activeWeaponRegistry[3]._weaponName, 
-                        weaponData = weapon_controller._activeWeaponRegistry[3]._weaponData, 
-                        camoData = weapon_controller._activeWeaponRegistry[3]._camoData
-                    }
-
-                    fake_rep_object._activeWeaponRegistry[4] = {
-                        weaponName = weapon_controller._activeWeaponRegistry[4]._weaponName, 
-                        weaponData = weapon_controller._activeWeaponRegistry[4]._weaponData
-                    }
-
-                    fake_rep_object._thirdPersonObject = game_client.third_person_object.new(fake_rep_object._player, nil, fake_rep_object)
-                    fake_rep_object._thirdPersonObject:equip(weapon_controller._activeWeaponIndex, true)
-                    fake_rep_object._alive = true
-                end
-                local clock_time = game_client.game_clock.getTime()
-                local tick = tick()
-                local velocity = Vector3.zero
-
-                if fake_rep_object._receivedPosition and fake_rep_object._receivedFrameTime then
-                    velocity = (args[1] - fake_rep_object._receivedPosition) / (tick - fake_rep_object._receivedFrameTime);
-                end
-                
-                local broken = false
-                if fake_rep_object._lastPacketTime and clock_time - fake_rep_object._lastPacketTime > 0.5 then
-                    broken = true
-                    fake_rep_object._breakcount = fake_rep_object._breakcount + 1
-                end
-
-                fake_rep_object._smoothReplication:receive(clock_time, tick, {
-                    t = tick, 
-                    position = args[1],
-                    velocity = velocity, 
-                    angles = args[2], 
-                    breakcount = fake_rep_object._breakcount
-                }, broken);
-
-                fake_rep_object._updaterecieved = true
-                fake_rep_object._receivedPosition = args[1]
-                fake_rep_object._receivedFrameTime = tick
-                fake_rep_object._lastPacketTime = clock_time
-                fake_rep_object:step(3, true)
-            else
-                local third_person_object = fake_rep_object:getThirdPersonObject()
-                if third_person_object then
-                    local character_model = third_person_object:popCharacterModel()
-                    character_model:Destroy()
-                    fake_rep_object:despawn()
-                end
-            end
-        end 
-
-        if command == "newbullets" then
-            local third_person_object = fake_rep_object:getThirdPersonObject()
-            if third_person_object then
-                third_person_object:kickWeapon()
-            end
-        end
-
-        return send(self, command, table.unpack(args))
-    end
-
-    local old_new_index
-
-    old_new_index = hookmetamethod(game, "__newindex", function(self, index, value)
-        if checkcaller() then
-            return old_new_index(self, index, value)
-        end
-
-        if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
-            if self == Camera and index == "CFrame" then
-                value *= CFrame.new(Options.ThirdPersonX.Value / 10, Options.ThirdPersonY.Value / 10, Options.ThirdPersonZ.Value / 10)
-            end
-        end
-
-        return old_new_index(self, index, value)
-    end)
 	
-	local function findtextrandom(text)
+	function findtextrandom(text)
 		if text:find(' @r ') then 
 			local b = text:split(' @r ')
 			return b[math.random(#b)]
@@ -1438,7 +1169,7 @@ do
 		end
 	end
 
-	local function textboxtriggers(text)
+	function textboxtriggers(text)
         local triggers = {
             ['{user}'] = shambles.username,
             ['{hour}'] = os.date("%H"),
@@ -1463,7 +1194,7 @@ do
 		return findtextrandom(text)
 	end
 
-    local function rotateVector2(v2, r)
+    function rotateVector2(v2, r)
         local c = math.cos(r);
         local s = math.sin(r);
         return Vector2.new(c * v2.X - s*v2.Y, s*v2.X + c*v2.Y)
@@ -1473,35 +1204,14 @@ do
         return vector2(math.floor(vector2.X), math.floor(vector2.Y))
     end
 
-    task.spawn(function()
-        while task.wait(Options.ChatSpamDelay.Value) do
-            if Toggles.ChatSpam.Value and Library.Unloaded ~= false and game_client.LocalPlayer.isAlive() then
-                local lol = ""
-    
-                if Toggles.ChatSpamEmojis.Value and Toggles.ChatSpamSymbols.Value then
-                    lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                elseif Toggles.ChatSpamEmojis.Value then
-                    lol = string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. phrases[math.random(1, #phrases)] .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)]) .. string.sub(emojis[math.random(1, #emojis)]:gsub('\"', ''), 1, stringsub_table[math.random(1, 10)])
-                elseif Toggles.ChatSpamSymbols.Value then
-                    lol = string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. phrases[math.random(1, #phrases)] .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10)) .. string.sub(symbols[math.random(1, #symbols)], 1, math.random(1, 10))
-                else
-                    lol = phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)] .. " " .. phrases[math.random(1, #phrases)]
-                end
-    
-                game_client.network.send(nil, "chatted", lol) 
-            end
-        end
-    end)
-
-    local raycastparameters = RaycastParams.new()
-    local function raycast(origin, direction, filterlist, whitelist)
+    function raycast(origin, direction, filterlist, whitelist)
         raycastparameters.FilterDescendantsInstances = filterlist
         raycastparameters.FilterType = Enum.RaycastFilterType[whitelist and "Whitelist" or "Blacklist"]
         local result = workspace:Raycast(origin, direction, raycastparameters)
         return result and result.Instance, result and result.Position, result and result.Normal
     end
     
-    local function bulletcheck(o, t, p)
+    function rage:bulletcheck(o, t, p)
         if p <= 0 then
             return false
         end
@@ -1523,13 +1233,13 @@ do
                 end
             end
     
-            return bulletcheck(po + n / 100, t, p)
+            return rage:bulletcheck(po + n / 100, t, p)
         end
     
         return true
     end
 
-    local function scanplayer(s, d, r, e) -- origin, target, radius, penetrationdepth
+    function rage:scanplayer(s, d, r, e)
         local c = CFrame.new(s, d)
     
         for p = 1, 2 do
@@ -1546,7 +1256,7 @@ do
                 }) do
                     local v = (o * CFrame.new(0, 0, -r)).Position
     
-                    if bulletcheck(v, d, e) then
+                    if rage:bulletcheck(v, d, e) then
                         return v
                     end
                 end
@@ -1558,13 +1268,13 @@ do
                 }) do
                     local v = (o * CFrame.new(r, 0, 0)).Position
     
-                    if bulletcheck(v, d, e) then
+                    if rage:bulletcheck(v, d, e) then
                         return v
                     end
                     if p == 0 then
                         local q = (o * CFrame.new(-r, 0, 0)).Position
     
-                        if bulletcheck(q, d, e) then
+                        if rage:bulletcheck(q, d, e) then
                             return q
                         end
                     end
@@ -1575,14 +1285,28 @@ do
         return s
     end
 
-    local lol = 0
+    function rage:reload(weapon)
+        local magSize = weapon:getWeaponStat("magsize")
+        local newCount = (magSize + (weapon:getWeaponStat("chamber") and 1 or 0)) - weapon._magCount
+        
+        if weapon._spareCount > newCount then
+            weapon._magCount += newCount
+            weapon._spareCount -= newCount
+        else
+            weapon._magCount += weapon._spareCount
+            weapon._spareCount = 0
+        end
+        
+        game_client.network:send("reload")
+        game_client.HudStatusInterface.updateAmmo(weapon)
+    end
 
-    local function fireratecheck(firerate)
+    function rage:fireratecheck(firerate)
         local curTick = tick()
         local future = curTick + (60 / firerate)
         
-        local shoot = curTick > lol
-        lol = shoot and future or lol
+        local shoot = curTick > rage.lastf
+        rage.lastf = shoot and future or rage.lastf
 
         return shoot
     end
@@ -1593,8 +1317,8 @@ do
                 for i,v in pairs(Players:GetPlayers()) do
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friends, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         if Toggles.RageFirePos.Value then
-                            if RPos ~= scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) then
-                                RPos = scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
+                            if RPos ~= rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) then
+                                RPos = rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
                             end
                         else
                             RPos = BarrelPos
@@ -1603,14 +1327,23 @@ do
                         
                         tableinfo.firepos = RPos
 
-                        if bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) then
+                        if game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount == 0 then
+                            rage:reload(game_client.WCI:getController()._activeWeaponRegistry[curgun])
+                        end
+                        
+                        if rage:bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and 
+                        rage:fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and 
+                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or 
+                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount ~= 0 then
                             debug.setupvalue(game_client.firearm_object.fireRound, 10, debug.getupvalue(game_client.firearm_object.fireRound, 10) + 1)
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
                                 debug.getupvalue(game_client.firearm_object.fireRound, 10),
                             }
                             
-                            ragetarget = v
+                            game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount -= 1
+
+                            rage.target = v
 
                             game_client.network:send("newbullets", tableinfo, game_client.game_clock.getTime())
                             for i = 1, #tableinfo.bullets do
@@ -1665,7 +1398,7 @@ do
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
 
-                                    if Toggles[Group.."EspChams"].Value then
+                                    if Toggles[Group.."EspHighlights"].Value then
                                         if not game.CoreGui:FindFirstChild(v.Name) then
                                             local Highlight = Instance.new("Highlight", game.CoreGui)
                                             if Highlight.Name ~= v.Name then
@@ -1677,11 +1410,11 @@ do
                                             game.CoreGui[v.Name].Adornee = Character
                                         end
 
-                                        if Toggles[Group.."EspChamsSine"].Value then	
+                                        if Toggles[Group.."EspHighlightsSine"].Value then	
                                             game.CoreGui[v.Name].FillTransparency = 1 - (math.sin(tick() * 5) + 1) / 2
                                         else
-                                            if game.CoreGui[v.Name].FillTransparency ~= 1 - Options[Group.."EspChamsTrans"].Value / 255 then
-                                                game.CoreGui[v.Name].FillTransparency = 1 - Options[Group.."EspChamsTrans"].Value / 255
+                                            if game.CoreGui[v.Name].FillTransparency ~= 1 - Options[Group.."EspHighlightsTrans"].Value / 255 then
+                                                game.CoreGui[v.Name].FillTransparency = 1 - Options[Group.."EspHighlightsTrans"].Value / 255
                                             end
                                         end
                     
@@ -1693,15 +1426,15 @@ do
                                             game.CoreGui[v.Name].Enabled = false
                                         end
 
-                                        if game.CoreGui[v.Name].OutlineTransparency ~= 1 - Options[Group.."EspOutlineChamsTrans"].Value / 255 then
-                                            game.CoreGui[v.Name].OutlineTransparency = 1 - Options[Group.."EspOutlineChamsTrans"].Value / 255
+                                        if game.CoreGui[v.Name].OutlineTransparency ~= 1 - Options[Group.."EspOutlineHighlightsTrans"].Value / 255 then
+                                            game.CoreGui[v.Name].OutlineTransparency = 1 - Options[Group.."EspOutlineHighlightsTrans"].Value / 255
                                         end
 
                                         if game.CoreGui[v.Name].Enabled ~= true then
                                             game.CoreGui[v.Name].Enabled = true
                                         end
                                         
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if game.CoreGui[v.Name].FillColor ~= Options.ColorTarget.Value then
                                                 game.CoreGui[v.Name].FillColor = Options.ColorTarget.Value
                                             end
@@ -1710,12 +1443,12 @@ do
                                                 game.CoreGui[v.Name].OutlineColor = Options.ColorTarget.Value
                                             end
                                         else
-                                            if game.CoreGui[v.Name].FillColor ~= Options[Group.."ColorChams"].Value then
-                                                game.CoreGui[v.Name].FillColor = Options[Group.."ColorChams"].Value
+                                            if game.CoreGui[v.Name].FillColor ~= Options[Group.."ColorHighlights"].Value then
+                                                game.CoreGui[v.Name].FillColor = Options[Group.."ColorHighlights"].Value
                                             end
                                             
-                                            if game.CoreGui[v.Name].OutlineColor ~= Options[Group.."ColorChamsOutline"].Value then
-                                                game.CoreGui[v.Name].OutlineColor = Options[Group.."ColorChamsOutline"].Value
+                                            if game.CoreGui[v.Name].OutlineColor ~= Options[Group.."ColorHighlightsOutline"].Value then
+                                                game.CoreGui[v.Name].OutlineColor = Options[Group.."ColorHighlightsOutline"].Value
                                             end
                                         end
                                     else
@@ -1753,7 +1486,7 @@ do
                                             Weapon.Size = Options.TextSize.Value
                                         end
 
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if Weapon.Color ~= Options.ColorTarget.Value then
                                                 Weapon.Color = Options.ColorTarget.Value
                                             end
@@ -1781,7 +1514,7 @@ do
                                     end
 
                                     if Toggles[Group.."EspBox"].Value then
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if Box.Color ~= Options.ColorTarget.Value then
                                                 Box.Color = Options.ColorTarget.Value
                                             end
@@ -1801,7 +1534,7 @@ do
 
                                     if Toggles[Group.."EspName"].Value then
                                         Name.Position = Vector2.new(Size.X / 2 + Pos.X, Pos.Y - 5 - Name.TextBounds.Y)
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if Name.Color ~= Options.ColorTarget.Value then
                                                 Name.Color = Options.ColorTarget.Value
                                             end
@@ -1838,7 +1571,7 @@ do
                                         Health.From = Vector2.new(Pos.X - 4, Pos.Y + Size.Y)
                                         Health.To = Vector2.new(Pos.X - 4, Health.From.Y - (Cur_Health / Max_Health) * Size.Y)
                                         Health.Visible = true
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if Health.Color ~= Options.ColorTarget.Value then
                                                 Health.Color = Options.ColorTarget.Value
                                             end
@@ -1876,7 +1609,7 @@ do
                                             HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Pos.Y - 3)
                                         end
 
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if HealthNumber.Color ~= Options.ColorTarget.Value then
                                                 HealthNumber.Color = Options.ColorTarget.Value
                                             end
@@ -1898,7 +1631,7 @@ do
                                         if Distance.Text ~= tostring(math.ceil(LocalPlayer:DistanceFromCharacter(Character.Torso.Position) / 5)).."M" then
                                             Distance.Text = tostring(math.ceil(LocalPlayer:DistanceFromCharacter(Character.Torso.Position) / 5)).."M"
                                         end
-                                        if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                             if Distance.Color ~= Options.ColorTarget.Value then
                                                 Distance.Color = Options.ColorTarget.Value
                                             end
@@ -1933,7 +1666,7 @@ do
                                     OutOfView.PointA = pos
                                     OutOfView.PointB = pos - rotateVector2(dir, math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value
                                     OutOfView.PointC = pos - rotateVector2(dir, -math.rad(35)) * Options[Group.."EspOutOfViewSize"].Value
-                                    if Toggles.EspTarget.Value and ragetarget ~= nil and v.Name == ragetarget.Name then
+                                    if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
                                         if OutOfView.Color ~= Options.ColorTarget.Value then
                                             OutOfView.Color = Options.ColorTarget.Value
                                         end
@@ -2608,6 +2341,22 @@ do
                 fake_rep_object._thirdPersonObject:equip(1, true)
                 fake_rep_object._alive = true
             end
+
+            local old_new_index
+        
+            old_new_index = hookmetamethod(game, "__newindex", function(self, index, value)
+                if checkcaller() then
+                    return old_new_index(self, index, value)
+                end
+        
+                if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
+                    if self == Camera and index == "CFrame" then
+                        value *= CFrame.new(Options.ThirdPersonX.Value / 10, Options.ThirdPersonY.Value / 10, Options.ThirdPersonZ.Value / 10)
+                    end
+                end
+        
+                return old_new_index(self, index, value)
+            end)
         end
 
         do -- Gun Chams and arm chams
@@ -2828,7 +2577,15 @@ do
 
             game_client.firearm_object.walkSway = function(...) 
                 if Toggles.ViewModel.Value then
-                    return CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5) * CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+
+                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                    end
+
+                    return angle
                 elseif Toggles.NoSway.Value then
                     return CFrame.new() 
                 end 
@@ -2838,7 +2595,15 @@ do
 
             game_client.firearm_object.gunSway = function(...) 
                 if Toggles.ViewModel.Value then
-                    return CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5) * CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+
+                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                    end
+
+                    return angle               
                 elseif Toggles.NoSway.Value then
                     return CFrame.new() 
                 end 
@@ -2855,6 +2620,308 @@ do
                     end
                 end
             end))
+        end
+
+        do -- Network
+            local send = game_client.network.send
+
+            game_client.network.send = function(self, command, ...)
+                local args = { ... }
+        
+                if command == "debug" then
+                    if args[1] == "Server Kick Message: You have been votekicked out of the server!" and Toggles.GameVotekick.Value then
+                        local jobid = ""
+        
+                        local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+                    
+                        for Index, Value in pairs(Servers.data) do
+                            if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
+                                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+                                jobid = tostring(Value.id)
+                            end
+                        end
+                    
+                        Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
+                    end
+                end
+        
+                if command == "newbullets" then 
+                    if Toggles.ExtraGunSound.Value then
+                        local gun = Instance.new("Sound")
+                        gun.Looped = false   
+                        gun.Volume = Options.ExtraGunsoundVolume.Value / 10
+                        gun.Parent = workspace
+        
+                        if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3") then
+                            gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3")
+                        elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav") then
+                            gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".wav")
+                        end    
+        
+                        gun:Play()
+                    end
+        
+                    if Toggles.BulletTracers.Value then
+                        for k = 1, #args[1].bullets do
+                            local bullet = args[1].bullets[k]
+                            local origin = args[1].firepos
+                            local attach_origin = Instance.new("Attachment", workspace.Terrain)
+                            attach_origin.Position = origin
+                            local ending = origin + (type(bullet[1]) == "table" and bullet[1].unit.Unit or bullet[1].Unit) * 300
+                            local attach_ending = Instance.new("Attachment", workspace.Terrain)
+                            attach_ending.Position = ending
+                            local beam = CreateBeam(attach_origin, attach_ending)
+                            beam.Parent = workspace
+                        end
+                    end
+                end
+        
+                if command == "repupdate" then   
+                    if Toggles.AntiHide.Value and game_client.LocalPlayer.isAlive() then
+                        args[1] = args[1] - Vector3.new(0, 1.2, 0)
+                    end
+                    
+                    if Toggles.AntiEnabled.Value and Options.AntiKey:GetState() then
+                        --{ "Off", "Up", "Down", "Random", "Sine Wave" }
+                        --{Values = { "Off", "Backwards", "Spin", "Random" }
+        
+                        local AntiAimPitch = args[2].x
+                        local AntiAimYaw = args[2].y
+                        local newa
+        
+                        if Options.AntiPitch.Value == "Up" then
+                            AntiAimPitch = 1.5
+                        elseif Options.AntiPitch.Value == "Down" then
+                            AntiAimPitch = -1.5
+                        elseif Options.AntiPitch.Value == "Random" then
+                            AntiAimPitch = math.random(-2, 2)
+                        elseif Options.AntiPitch.Value == "Sine Wave" then
+                            AntiAimPitch = math.sin(tick() * Options.AntiSineWave.Value) * 2
+                        elseif Options.AntiPitch.Value == "Custom" then
+                            AntiAimPitch = Options.AntiCustomPitch.Value / 2
+                        end
+        
+                        if Options.AntiYaw.Value == "Backwards" then
+                            AntiAimYaw += math.pi
+                        elseif Options.AntiYaw.Value == "Spin" then
+                            AntiAimYaw = (tick() * Options.AntiSpinRate.Value) % 12
+                        elseif Options.AntiYaw.Value == "Random" then
+                            AntiAimYaw = math.random(99999)
+                        elseif Options.AntiYaw.Value == "Sine Wave" then
+                            AntiAimYaw = math.sin(tick() * Options.AntiSineWave.Value) * 4
+                        elseif Options.AntiYaw.Value == "Custom" then
+                            AntiAimYaw = Options.AntiCustomYaw.Value / 50
+                        end
+                        
+                        newa = newa or Vector2.new(AntiAimPitch, AntiAimYaw)
+        
+                        args[2] = newa
+                    end
+                end
+        
+                if command == "bullethit" then
+                    --Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), 2.5)
+                    if Toggles.ExtraHeadsound.Value and tostring(args[3]) == "Head" then
+                        local head = Instance.new("Sound")
+                        head.Looped = false
+                        head.Parent = workspace
+                        head.Volume = Options.ExtraHeadsoundVolume.Value / 10
+        
+                        if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3") then
+                            head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3")
+                        elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav") then
+                            head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".wav")
+                        end
+        
+                        head:Play()
+                    end
+        
+                    if Toggles.ExtraBodysound.Value and tostring(args[3]) == "Body" then
+                        local body = Instance.new("Sound")
+                        body.Looped = false
+                        body.Parent = workspace            
+                        body.Volume = Options.ExtraBodysoundVolume.Value / 10
+        
+                        if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3") then
+                            body.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3")
+                        elseif isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav") then
+                            head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".wav")
+                        end    
+        
+                        body:Play()
+                    end
+                end
+        
+                if command == "falldamage" then
+                    if Toggles.MovementFall.Value then
+                        return
+                    end
+                end
+        
+                if command == "stance" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local stance = args[1]
+                        third_person_object:setStance(stance)
+                    end
+                end
+        
+                if command == "aim" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local aim = args[1]
+                        third_person_object:setAim(aim)
+                    end
+                end
+        
+                if command == "equip" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local weapon_index = args[1]
+                        if weapon_index < 3 then
+                            third_person_object:equip(weapon_index)
+                        elseif weapon_index == 3 then
+                            third_person_object:equipMelee(weapon_index)
+                        end
+                    end
+                end
+        
+                if command == "sprint" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local sprinting = args[1]
+                        third_person_object:setSprint(sprinting)
+                    end
+                end
+        
+                if command == "stab" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        third_person_object:stab()
+                    end
+                end
+        
+                if command == "spawn" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local character_model = third_person_object:popCharacterModel()
+                        character_model:Destroy()
+                        fake_rep_object:despawn()
+                    end
+        
+                    local current_loadout = game_client.active_loadout.getActiveLoadoutData(game_client.player_data.getPlayerData())
+                    fake_rep_object:spawn(nil, current_loadout)
+                end
+        
+                if command == "forcereset" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local character_model = third_person_object._character
+                        character_model:Destroy()
+                        fake_rep_object:despawn()
+                    end
+                end
+        
+                if command == "swapweapon" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        local weapon_index = args[2]
+                        local weapon_dropped = args[1]
+        
+                        if weapon_index < 3 then
+                            fake_rep_object._activeWeaponRegistry[weapon_index] = {
+                                weaponName = weapon_dropped.Gun.Value,
+                                weaponData = game_client.content_database.getWeaponData(weapon_dropped.Gun.Value),
+                            }
+                        else
+                            fake_rep_object._activeWeaponRegistry[weapon_index] = {
+                                weaponName = weapon_dropped.Knife.Value,
+                                weaponData = game_client.content_database.getWeaponData(weapon_dropped.Knife.Value),
+                            }
+                        end
+                    end
+                end
+        
+                if command == "repupdate" then
+                    if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and game_client.character_interface:isAlive() then
+                        local third_person_object = fake_rep_object:getThirdPersonObject()
+                        if not third_person_object then
+                            local weapon_controller = game_client.weapon_controller_interface.getController()
+                            fake_rep_object._activeWeaponRegistry[1] = {
+                                weaponName = weapon_controller._activeWeaponRegistry[1]._weaponName, 
+                                weaponData = weapon_controller._activeWeaponRegistry[1]._weaponData, 
+                                attachmentData = weapon_controller._activeWeaponRegistry[1]._weaponAttachments, 
+                                camoData = weapon_controller._activeWeaponRegistry[1]._camoList
+                            }
+        
+                            fake_rep_object._activeWeaponRegistry[2] = {
+                                weaponName = weapon_controller._activeWeaponRegistry[2]._weaponName, 
+                                weaponData = weapon_controller._activeWeaponRegistry[2]._weaponData, 
+                                attachmentData = weapon_controller._activeWeaponRegistry[2]._weaponAttachments, 
+                                camoData = weapon_controller._activeWeaponRegistry[2]._camoList
+                            }
+        
+                            fake_rep_object._activeWeaponRegistry[3] = {
+                                weaponName = weapon_controller._activeWeaponRegistry[3]._weaponName, 
+                                weaponData = weapon_controller._activeWeaponRegistry[3]._weaponData, 
+                                camoData = weapon_controller._activeWeaponRegistry[3]._camoData
+                            }
+        
+                            fake_rep_object._activeWeaponRegistry[4] = {
+                                weaponName = weapon_controller._activeWeaponRegistry[4]._weaponName, 
+                                weaponData = weapon_controller._activeWeaponRegistry[4]._weaponData
+                            }
+        
+                            fake_rep_object._thirdPersonObject = game_client.third_person_object.new(fake_rep_object._player, nil, fake_rep_object)
+                            fake_rep_object._thirdPersonObject:equip(weapon_controller._activeWeaponIndex, true)
+                            fake_rep_object._alive = true
+                        end
+                        local clock_time = game_client.game_clock.getTime()
+                        local tick = tick()
+                        local velocity = Vector3.zero
+        
+                        if fake_rep_object._receivedPosition and fake_rep_object._receivedFrameTime then
+                            velocity = (args[1] - fake_rep_object._receivedPosition) / (tick - fake_rep_object._receivedFrameTime);
+                        end
+                        
+                        local broken = false
+                        if fake_rep_object._lastPacketTime and clock_time - fake_rep_object._lastPacketTime > 0.5 then
+                            broken = true
+                            fake_rep_object._breakcount = fake_rep_object._breakcount + 1
+                        end
+        
+                        fake_rep_object._smoothReplication:receive(clock_time, tick, {
+                            t = tick, 
+                            position = args[1],
+                            velocity = velocity, 
+                            angles = args[2], 
+                            breakcount = fake_rep_object._breakcount
+                        }, broken);
+        
+                        fake_rep_object._updaterecieved = true
+                        fake_rep_object._receivedPosition = args[1]
+                        fake_rep_object._receivedFrameTime = tick
+                        fake_rep_object._lastPacketTime = clock_time
+                        fake_rep_object:step(3, true)
+                    else
+                        local third_person_object = fake_rep_object:getThirdPersonObject()
+                        if third_person_object then
+                            local character_model = third_person_object:popCharacterModel()
+                            character_model:Destroy()
+                            fake_rep_object:despawn()
+                        end
+                    end
+                end 
+        
+                if command == "newbullets" then
+                    local third_person_object = fake_rep_object:getThirdPersonObject()
+                    if third_person_object then
+                        third_person_object:kickWeapon()
+                    end
+                end
+        
+                return send(self, command, table.unpack(args))
+            end
         end
     end
 end

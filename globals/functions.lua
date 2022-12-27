@@ -38,8 +38,6 @@ do
                 game_client.votekick_interface = v
             elseif rawget(v, "getActiveWeapon") then -- Useful for getting current weapon
                 game_client.weapon_controller_object = v
-            elseif rawget(v, "gunSway") then
-                print("hahah") 
             elseif rawget(v, "getController") then -- Useful for getting your current weapon
                 game_client.weapon_controller_interface = v
             elseif rawget(v, "updateVersion") and rawget(v, "inMenu") then -- Useful for chat spam :)
@@ -76,6 +74,8 @@ do
             game_client.bullet_check = require(v)
         elseif v.Name == "WeaponObject" then
             game_client.WeaponObject = require(v)
+        elseif v.Name == "HudStatusInterface" then
+            game_client.HudStatusInterface = require(v)
         end
     end
 end
