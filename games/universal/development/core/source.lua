@@ -274,7 +274,13 @@ local stringsub_table = {
 
 local Window = Library:CreateWindow({Title = 'Shambles Haxx', Center = true, AutoShow = true})
 
-local Tabs = {Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings')} 
+getgenv().Tabs = {
+    Rage = Window:AddTab('Rage'), 
+    Visuals = Window:AddTab('Visuals'), 
+    Misc = Window:AddTab('Misc'), 
+    Settings = Window:AddTab('Settings'), 
+    Lua = Window:AddTab("Lua")
+} 
 
 local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist')
 AimAssist:AddToggle('AimEnabled', {Text = 'Enabled'}):AddKeyPicker('AimKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Aim Assist', NoUI = false})
