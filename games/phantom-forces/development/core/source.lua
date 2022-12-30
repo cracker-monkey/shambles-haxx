@@ -173,7 +173,7 @@ local devmode 					= true
 local CrosshairPos 				= ScreenSize / 2
 local curgun					= 0
 local gaysex 					= 0
-local fake_rep_object 			= nil
+local fake_rep_object 		    = nil
 local CrosshairLeft             = Crosshair.Left
 local CrosshairRight            = Crosshair.Right
 local CrosshairTop              = Crosshair.Top
@@ -186,13 +186,19 @@ local organizedPlayers          = {}
 local rage                      = {target = nil, lastf = 0}
 local currentAngle              = 0
 local fps                       = 0
-local cache                     = {setsway = game_client.main_camera_object.setSway, shake = game_client.main_camera_object.shake, gsway = game_client.firearm_object.gunSway, wsway = game_client.firearm_object.walkSway}
+local cache                     = {
+    setsway = game_client.main_camera_object.setSway, 
+    shake = game_client.main_camera_object.shake, 
+    gsway = game_client.firearm_object.gunSway, 
+    wsway = game_client.firearm_object.walkSway,
+}
 local raycastparameters         = RaycastParams.new()
 local tableinfo                 = { firepos = BarrelPos, bullets = {}, camerapos = BarrelPos, }
 local ignorething
 local BarrelPos
 local RPos
 getgenv().Friends = {}
+getgenv().Priority = {}
 
 function sounds()
     local list = listfiles("shambles haxx/Configs/sounds")
@@ -576,28 +582,7 @@ local stringsub_table = {
     [10] = 40
 }
 
-getgenv().Tabs = {Rage = Window:AddTab('Rage'), Legit = Window:AddTab('Legit'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings'), Lua = Window:AddTab("Lua")} 
-
-do -- Rage Tab
-    local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot') do
-        RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
-        RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-        RageBot:AddToggle('RageFirePos', {Text = 'Fire Position Scanning'})
-        RageBot:AddSlider('RageFirePosAmount', {Text = 'Studs', Default = 3, Min = 0, Max = 8, Rounding = 0})
-    end
-
-    local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim') do
-        AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
-        AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
-        AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
-        AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
-        AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
-        AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
-        AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
-        AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
-        AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
-    end
-end
+getgenv().Tabs = {Legit = Window:AddTab('Legit'), Rage = Window:AddTab('Rage'), Visuals = Window:AddTab('Visuals'), Misc = Window:AddTab('Misc'), ['Settings'] = Window:AddTab('Settings'), Lua = Window:AddTab("Lua")} 
 
 do -- Legit Tab
     local AimAssist = Tabs.Legit:AddLeftGroupbox('Aim Assist') do
@@ -621,6 +606,33 @@ do -- Legit Tab
     end
 end
 
+do -- Rage Tab
+    local RageBot = Tabs.Rage:AddLeftGroupbox('Rage Bot') do
+        RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
+        RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+        RageBot:AddToggle('RageFirePos', {Text = 'Fire Position Scanning'})
+        RageBot:AddSlider('RageFirePosAmount', {Text = 'Studs', Default = 3, Min = 0, Max = 8, Rounding = 10})
+    end
+
+    local KnifeBot = Tabs.Rage:AddRightGroupbox("Knife Bot") do
+        KnifeBot:AddToggle('KnifeBot', {Text = 'Enabled'}):AddKeyPicker('KnifeKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Knife Bot', NoUI = false})
+        KnifeBot:AddDropdown('KnifeScan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+        KnifeBot:AddSlider('KnifeRange', {Text = 'Studs', Default = 10, Min = 0, Max = 25, Rounding = 10})
+    end
+
+    local AntiAim = Tabs.Rage:AddRightGroupbox('Anti Aim') do
+        AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
+        AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
+        AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
+        AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
+        AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
+        AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
+        AntiAim:AddDropdown('AntiStance', {Values = { "Off", "Stand", "Crouch", "Prone" }, Default = 1, Multi = false, Text = 'Force Stance'})
+        AntiAim:AddToggle('AntiHide', {Text = 'Hide In Floor'})
+    end
+end
+
 do -- Visuals Tab
     local EspBox = Tabs.Visuals:AddLeftTabbox() do
         local EnemyEsp = EspBox:AddTab('Enemy ESP') do
@@ -636,6 +648,9 @@ do -- Visuals Tab
             EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
             EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
             EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+            EnemyEsp:AddDivider()
+            EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
+            EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
             EnemyEsp:AddDivider()
             EnemyEsp:AddToggle('EnemyEspHighlights', {Text = 'Highlights'}):AddColorPicker('EnemyColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('EnemyColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
             EnemyEsp:AddToggle('EnemyEspHighlightsSine', {Text = 'Pulse'})
@@ -657,19 +672,40 @@ do -- Visuals Tab
             TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
             TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
             TeamEsp:AddDivider()
+            TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
+            TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            TeamEsp:AddDivider()
             TeamEsp:AddToggle('TeamEspHighlights', {Text = 'Highlights'}):AddColorPicker('TeamColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('TeamColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
             TeamEsp:AddToggle('TeamEspHighlightsSine', {Text = 'Pulse'})
             TeamEsp:AddSlider('TeamEspHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
             TeamEsp:AddSlider('TeamEspOutlineHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
         end
 
-        local SettingsEsp = EspBox:AddTab('Settings') do
-            SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
-            SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
-            SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
-            SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
-            SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
+        local LocalEsp = EspBox:AddTab('Local ESP') do
+            LocalEsp:AddToggle('LocalEspEnabled', {Text = 'Enabled'})
+            LocalEsp:AddToggle('LocalEspBox', {Text = 'Box'}):AddColorPicker('LocalColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+            LocalEsp:AddToggle('LocalEspName', {Text = 'Name'}):AddColorPicker('LocalColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+            LocalEsp:AddToggle('LocalEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('LocalColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+            LocalEsp:AddToggle('LocalEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('LocalColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+            LocalEsp:AddToggle('LocalEspWeapon', {Text = 'Weapon'}):AddColorPicker('LocalColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+            LocalEsp:AddToggle('LocalEspIcon', {Text = 'Weapon Icon'})
+            LocalEsp:AddDivider()
+            LocalEsp:AddToggle('LocalEspChams', {Text = 'Chams'}):AddColorPicker('LocalColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
+            LocalEsp:AddSlider('LocalEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddDivider()
+            LocalEsp:AddToggle('LocalEspHighlights', {Text = 'Highlights'}):AddColorPicker('LocalColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('LocalColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
+            LocalEsp:AddToggle('LocalEspHighlightsSine', {Text = 'Pulse'})
+            LocalEsp:AddSlider('LocalEspHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('LocalEspOutlineHighlightsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
         end
+    end
+
+    local SettingsEsp = Tabs.Visuals:AddLeftGroupbox('Settings') do
+        SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
+        SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
+        SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
+        SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
+        SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
     end
 
     local WeaponEsp = Tabs.Visuals:AddLeftGroupbox('Dropped ESP') do
@@ -714,11 +750,11 @@ do -- Visuals Tab
             LocalEsp:AddSlider('ThirdPersonY', {Text = 'Y Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
             LocalEsp:AddSlider('ThirdPersonZ', {Text = 'Z Position', Default = 5, Min = 0, Max = 100, Rounding = 1})
             LocalEsp:AddToggle('AGunChams', {Text = 'Gun Chams'}):AddColorPicker('AColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Gun Chams Color'})
-            LocalEsp:AddSlider('AGunChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('AGunChamsTrans', {Text = 'Transparency', Default = 150, Min = 1, Max = 255, Rounding = 0, Compact = true})
             LocalEsp:AddSlider('AGunChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
             LocalEsp:AddDropdown('AGunChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
             LocalEsp:AddToggle('AArmChams', {Text = 'Arm Chams'}):AddColorPicker('AColorArmChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Arm Chams Color'})
-            LocalEsp:AddSlider('AArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('AArmChamsTrans', {Text = 'Transparency', Default = 150, Min = 1, Max = 255, Rounding = 0, Compact = true})
             LocalEsp:AddSlider('AArmChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
             LocalEsp:AddDropdown('AArmChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})
             LocalEsp:AddToggle('GunChams', {Text = 'Highlight Gun Chams'}):AddColorPicker('ColorGunChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Chams Color'}):AddColorPicker('ColorGunOutlineChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlight Gun Outline Chams Color'})
@@ -758,7 +794,12 @@ do -- Misc Tab
     end
 
     local Extra = Tabs.Misc:AddRightGroupbox('Extra') do
+        Extra:AddToggle('IgnoreFriends', {Text = 'Ignore Friends'})
+        Extra:AddToggle('PriorityOnly', {Text = 'Target Prioritized Players Only'})
+        Extra:AddToggle('SupOnly', {Text = 'Suppress Only'})
         Extra:AddToggle('AutoDeploy', {Text = 'Auto Deploy'})
+        Extra:AddToggle('HitLogs', {Text = 'Hit Logs'})
+        Extra:AddSlider('HitLogTime', {Text = 'Time', Default = 3, Min = 1, Max = 10, Rounding = 0})
         Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
         Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
         Extra:AddDropdown('ExtraHeadsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Head Sound'})
@@ -832,7 +873,6 @@ do -- Settings Tab
                 end
             end
         end)
-
         PlayerList:AddButton('Friend', function()
             if not table.find(Friends, Options.PlayerList.Value) then
                 table.insert(Friends, Options.PlayerList.Value)
@@ -844,6 +884,19 @@ do -- Settings Tab
                     end
                 end
                 Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+            end
+        end)
+        PlayerList:AddButton('Prioritize', function()
+            if not table.find(Priority, Options.PlayerList.Value) then
+                table.insert(Priority, Options.PlayerList.Value)
+                Library:Notify("Prioritized player " ..Options.PlayerList.Value.. ".", 2.5)
+            elseif table.find(Priority, Options.PlayerList.Value) then
+                for i1, v1 in pairs(Options.PlayerList.Values) do
+                    if Options.PlayerList.Value == v1 then
+                        table.remove(Priority, i1)
+                    end
+                end
+                Library:Notify("Un-Prioritized player " ..Options.PlayerList.Value.. ".", 2.5)
             end
         end)
     end
@@ -934,6 +987,8 @@ end
 wait(0.1) -- Keep this because game breaks cause the UI loads slower then the modules and then Options table doesn't exist.
 
 do
+    local send = game_client.network.send
+
     for _,Player in pairs(Players:GetPlayers()) do
         Ut.AddToPlayer(Player)
     end
@@ -1020,7 +1075,7 @@ do
         beam.Enabled = true
         beam.ZOffset = -1
         beam.Transparency = NumberSequence.new((1 - Options.BulletTracersTrans.Value / 255),(1 - Options.BulletTracersTrans.Value / 255))
-        beam.Color = ColorSequence.new(Options.ColorBulletTracers.Value, Color3.new(0, 0, 0))
+        beam.Color = ColorSequence.new(Options.ColorBulletTracers.Value, Options.ColorBulletTracers.Value)
         beam.Attachment0 = origin_att
         beam.Attachment1 = ending_att
         Debris:AddItem(beam, 3)
@@ -1087,29 +1142,43 @@ do
     end 
 
     function get_character(player)
-        local entry = game_client.replication_interface.getEntry(player)
+        if player == LocalPlayer and fake_rep_object ~= nil then
+            if fake_rep_object._thirdPersonObject ~= nil then
+                return fake_rep_object._thirdPersonObject._character
+            end
+        else
+            local entry = game_client.replication_interface.getEntry(player)
 
-        if entry then
-            local third_person_object = entry._thirdPersonObject
-            if third_person_object then
-                return third_person_object._character
+            if entry then
+                local third_person_object = entry._thirdPersonObject
+                if third_person_object then
+                    return third_person_object._character
+                end
             end
         end
     end
 
     function get_health(player)
-        local entry = game_client.replication_interface.getEntry(player)
+        if player == LocalPlayer and fake_rep_object ~= nil then
+            return fake_rep_object:getHealth()
+        else
+            local entry = game_client.replication_interface.getEntry(player)
 
-        if entry then
-            return entry:getHealth()
+            if entry then
+                return entry:getHealth()
+            end
         end
     end
 
     function get_alive(player)
-        local entry = game_client.replication_interface.getEntry(player)
+        if player == LocalPlayer and fake_rep_object ~= nil then
+            return fake_rep_object._alive
+        else
+            local entry = game_client.replication_interface.getEntry(player)
 
-        if entry then
-            return entry._alive
+            if entry then
+                return entry._alive
+            end
         end
     end
 
@@ -1122,42 +1191,58 @@ do
                 return third_person_object._replicationObject._receivedPosition, third_person_object._replicationObject._receivedFrameTime, third_person_object._replicationObject._velspring._p0
             end
         end
-    end
+    end 
 
     function get_weapon(player)
-        local entry = game_client.replication_interface.getEntry(player)
+        if player == LocalPlayer and fake_rep_object ~= nil then
+            if fake_rep_object._thirdPersonObject ~= nil then
+                return fake_rep_object._thirdPersonObject._weaponname or ""
+            end
+        else
+            local entry = game_client.replication_interface.getEntry(player)
 
-        if entry then
-            local third_person_object = entry._thirdPersonObject
-            if third_person_object then
-                return third_person_object._weaponname or ""
+            if entry then
+                local third_person_object = entry._thirdPersonObject
+                if third_person_object then
+                    return third_person_object._weaponname or ""
+                end
             end
         end
     end
 
     function calculate_player_bounding_box(character)
-        local cam = workspace.CurrentCamera.CFrame
-        local torso = character.PrimaryPart.CFrame
-        local head = character.Head.CFrame
-        local top, top_isrendered = workspace.CurrentCamera:WorldToViewportPoint(head.Position + (torso.UpVector * 1) + cam.UpVector)
-        local bottom, bottom_isrendered = workspace.CurrentCamera:WorldToViewportPoint(torso.Position - (torso.UpVector * 2.5) - cam.UpVector)
+        local Pos = Camera:WorldToViewportPoint(character.Torso.Position)
+        local CSize = (Camera:WorldToViewportPoint(character.Torso.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(character.Torso.Position + Vector3.new(0, 2.6, 0)).Y) / 2
+        local BoxSize = Vector2.new(math.floor(CSize * 1.2), math.floor(CSize * 2))
+        local BoxPos = Vector2.new(math.floor(Pos.X - CSize * 1 / 2), math.floor(Pos.Y - CSize * 1.6 / 2))
 
-        local minY = math.abs(bottom.y - top.y)
-        local sizeX = math.ceil(math.max(math.clamp(math.abs(bottom.x - top.x) * 2.5, 0, minY), minY / 2, 3))
-        local sizeY = math.ceil(math.max(minY, sizeX * 0.5, 3))
-
-        if top_isrendered or bottom_isrendered then
-            local boxtop = Vector2.new(math.floor(top.x * 0.5 + bottom.x * 0.5 - sizeX * 0.5), math.floor(math.min(top.y, bottom.y)))
-            local boxsize = Vector2.new(sizeX, sizeY)
-            return boxtop, boxsize 
-        end
+        return BoxPos, BoxSize
     end
 
     function chams(part, color, trans, reflectance, material)
         part.Material = material == "ForceField" and "ForceField" or material == "Neon" and "Neon" or material == "Plastic" and "SmoothPlastic" or "Glass"
         part.Color = color
         part.Transparency =  1 - trans
+        part.Reflectance = reflectance / 10
+        if part:IsA("Part") and part:FindFirstChild("Mesh") and not part:IsA("BlockMesh") then 
+            part.Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
+            if material == "Plastic" or material == "Glass" then 
+                part.Mesh.TextureId = "" 
+            end 
+        end  
+    end
+
+    function chams_arm(part, color, trans, reflectance, material)
+        part.Material = material == "ForceField" and "ForceField" or material == "Neon" and "Neon" or material == "Plastic" and "SmoothPlastic" or "Glass"
+        if part:FindFirstChild("Mesh") then
+            part.Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
+        end
+        part.Color = color
+        part.Transparency =  1 - trans
         part.Reflectance = reflectance / 10 
+        if material == "Plastic" or material == "Glass" then 
+            part.Mesh.TextureId = "" 
+        end 
     end
 	
 	function findtextrandom(text)
@@ -1311,19 +1396,68 @@ do
         return shoot
     end
 
+    function rage:KnifeTargets(range, visible, hitscan)
+        local results = {}
+    
+        for i, v in ipairs(Players:GetPlayers()) do
+            if Toggles.IgnoreFriends.Value and table.find(Friends, v.Name) then return end
+            if not table.find(Priority, v.Name) and Toggles.PriorityOnly.Value then continue end
+            
+            if v.Team ~= LocalPlayer.Team and game_client.LocalPlayer.isAlive() then
+                local Character = get_character(v)
+                if Character then
+                    local target_pos = Character.Torso.Position
+                    local target_direction = target_pos - Camera.CFrame.Position
+                    local target_dist = (target_pos - Camera.CFrame.Position).Magnitude
+                    if range ~= 26 and target_dist > range then
+                        continue
+                    end
+                    local ignore = { game.Players.LocalPlayer, Camera, workspace.Ignore, workspace.Players }
+    
+                    local part1, ray_pos = workspace:FindPartOnRayWithIgnoreList(Ray.new(Camera.CFrame.Position, target_direction), ignore)
+        
+                    if part and visible then
+                        continue
+                    end
+        
+                    local part2, ray_pos = workspace:FindPartOnRayWithIgnoreList(Ray.new(Camera.CFrame.Position - Vector3.new(0, 2, 0), target_direction), ignore)
+        
+                    local ray_distance = (target_pos - ray_pos).Magnitude
+                    table.insert(results, {
+                        player = v,
+                        part = Character[hitscan],
+                        tppos = ray_pos,
+                        direction = target_direction,
+                        dist = target_dist,
+                        insight = ray_distance < 15 and part1 == part2,
+                    })
+                end
+            end
+        end
+    
+        return results
+    end
+
+    function rage:KnifeTarget(target)
+        if target ~= nil and target.part ~= nil and curgun == 3 and game_client.LocalPlayer.isAlive() then
+            send(game_client.network, "stab")
+            send(game_client.network, "knifehit", target.player, target.part.Name)
+        end
+    end
+
     do -- Cheat Functions
         do -- Rage Bot   
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
                 for i,v in pairs(Players:GetPlayers()) do
-                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and not table.find(Friends, v.Name) and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
+                    if Toggles.IgnoreFriends.Value and table.find(Friends, v.Name) then return end
+                    if not table.find(Priority, v.Name) and Toggles.PriorityOnly.Value then continue end
+                    if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         if Toggles.RageFirePos.Value then
-                            if RPos ~= rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) then
-                                RPos = rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
-                            end
+                            RPos = rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
                         else
                             RPos = BarrelPos
                         end
-                        local traj = game_client.physics.trajectory(RPos, Vector3.new(0, -192.6, 0), get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)                   
+                        local traj = game_client.physics.trajectory(RPos, game_client.PBS.bulletAcceleration, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)                   
                         
                         tableinfo.firepos = RPos
 
@@ -1334,7 +1468,8 @@ do
                         if rage:bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and 
                         rage:fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and 
                         game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or 
-                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) and game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount ~= 0 then
+                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) and 
+                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount ~= 0 then
                             debug.setupvalue(game_client.firearm_object.fireRound, 10, debug.getupvalue(game_client.firearm_object.fireRound, 10) + 1)
                             tableinfo.bullets[1] = {
                                 traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
@@ -1354,6 +1489,15 @@ do
 				end
             end))
         end
+
+        do -- Knife Bot
+            Library:GiveSignal(rs.RenderStepped:Connect(function()
+                if Toggles.KnifeBot.Value and Options.KnifeKey:GetState() then
+                    local target = rage:KnifeTargets(Options.KnifeRange.Value, true, Options.KnifeScan.Value)[1]
+                    rage:KnifeTarget(target)
+                end 
+            end))
+        end
         
         do -- ESP Players
             Library:GiveSignal(rs.RenderStepped:Connect(function()
@@ -1365,11 +1509,354 @@ do
                 for i,v in pairs(Players:GetPlayers()) do
                     local Group = "Enemy"
 
-                    if v.Team == LocalPlayer.Team then
+                    if v == LocalPlayer then
+                        Group = "Local"
+                    elseif v.Team == LocalPlayer.Team then
                         Group = "Team"
                     end
 
-                    if Toggles[Group.."EspEnabled"].Value and PLRDS[v] and game_client.LocalPlayer.isAlive() then
+                    if Group == "Local" and PLRDS[v] and game_client.LocalPlayer.isAlive() and fake_rep_object ~= nil then
+                        local PLRD = PLRDS[v]
+                        for _,v in pairs (PLRD) do
+                            if v.Visible ~= false then
+                                v.Visible = false
+                            end
+                        end
+                        
+                        local Character = get_character(LocalPlayer)
+                        if Character then
+                            local _, OnScreen = Camera:WorldToViewportPoint(Character.Torso.Position)
+                            if OnScreen then
+                                local Pos, Size = calculate_player_bounding_box(Character)
+                                if Pos and Size then
+                                    local Cur_Health, Max_Health = get_health(v)
+                                    local Box = PLRD.Box
+                                    local BoxFill = PLRD.BoxFill
+                                    local BoxOutline = PLRD.BoxOutline
+                                    local Name = PLRD.Name
+                                    local Weapon = PLRD.Weapon
+                                    local Health = PLRD.Health
+                                    local HealthOutline = PLRD.HealthOutline
+                                    local HealthNumber = PLRD.HealthNumber
+                                    local Distance = PLRD.Distance
+                                    local Icon = PLRD.Icon
+                                    local IconImg = NameToIcon(get_weapon(v))
+                                    local yadd = 0
+
+                                    if Toggles[Group.."EspChams"].Value then
+                                        for _,q in pairs(Character:GetChildren()) do
+                                            if (q:IsA("BasePart") or q:IsA("MeshPart") or q:IsA("Part")) and q.Transparency ~= 1 then
+                                                if not q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                    local Cham = Instance.new("BoxHandleAdornment", q)
+                                                    Cham.Name = "Cham"
+                                                end
+
+                                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                    if q.Cham.Parent ~= q then
+                                                        q.Cham.Parent = q
+                                                    end
+
+                                                    if q.Cham.Adornee ~= q then
+                                                        q.Cham.Adornee = q
+                                                    end
+
+                                                    if q.Cham.Transparency ~=  1 - Options[Group.."EspChamsTrans"].Value / 255 then
+                                                        q.Cham.Transparency =  1 - Options[Group.."EspChamsTrans"].Value / 255
+                                                    end
+
+                                                    if q.Cham.Color3 ~= Options[Group.."ColorChams"].Value then
+                                                        q.Cham.Color3 = Options[Group.."ColorChams"].Value
+                                                    end
+
+                                                    if q.Cham.Size ~= q.Size * 1.01 then
+                                                        q.Cham.Size = q.Size * 1.01
+                                                    end
+
+                                                    if q.Cham.ZIndex ~= 4 then
+                                                        q.Cham.ZIndex = 4
+                                                    end
+
+                                                    if q.Cham.AlwaysOnTop ~= true then
+                                                        q.Cham.AlwaysOnTop = true
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    else
+                                        for _,q in pairs(Character:GetChildren()) do
+                                            if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                q.Cham:Destroy()
+                                            end
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspHighlights"].Value then
+                                        if not game.CoreGui:FindFirstChild(v.Name) then
+                                            local Highlight = Instance.new("Highlight", game.CoreGui)
+                                            if Highlight.Name ~= v.Name then
+                                                Highlight.Name = v.Name
+                                            end
+                                        end
+
+                                        if game.CoreGui[v.Name].Adornee ~= Character then
+                                            game.CoreGui[v.Name].Adornee = Character
+                                        end
+
+                                        if Toggles[Group.."EspHighlightsSine"].Value then	
+                                            game.CoreGui[v.Name].FillTransparency = 1 - (math.sin(tick() * 5) + 1) / 2
+                                        else
+                                            if game.CoreGui[v.Name].FillTransparency ~= 1 - Options[Group.."EspHighlightsTrans"].Value / 255 then
+                                                game.CoreGui[v.Name].FillTransparency = 1 - Options[Group.."EspHighlightsTrans"].Value / 255
+                                            end
+                                        end
+                    
+                                        if game.CoreGui[v.Name].Adornee ~= Character then
+                                            game.CoreGui[v.Name].Adornee = Character
+                                        end
+
+                                        if game.CoreGui[v.Name].Enabled ~= false then
+                                            game.CoreGui[v.Name].Enabled = false
+                                        end
+
+                                        if game.CoreGui[v.Name].OutlineTransparency ~= 1 - Options[Group.."EspOutlineHighlightsTrans"].Value / 255 then
+                                            game.CoreGui[v.Name].OutlineTransparency = 1 - Options[Group.."EspOutlineHighlightsTrans"].Value / 255
+                                        end
+
+                                        if game.CoreGui[v.Name].Enabled ~= true then
+                                            game.CoreGui[v.Name].Enabled = true
+                                        end
+                                        
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if game.CoreGui[v.Name].FillColor ~= Options.ColorTarget.Value then
+                                                game.CoreGui[v.Name].FillColor = Options.ColorTarget.Value
+                                            end
+                                            
+                                            if game.CoreGui[v.Name].OutlineColor ~= Options.ColorTarget.Value then
+                                                game.CoreGui[v.Name].OutlineColor = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if game.CoreGui[v.Name].FillColor ~= Options[Group.."ColorHighlights"].Value then
+                                                game.CoreGui[v.Name].FillColor = Options[Group.."ColorHighlights"].Value
+                                            end
+                                            
+                                            if game.CoreGui[v.Name].OutlineColor ~= Options[Group.."ColorHighlightsOutline"].Value then
+                                                game.CoreGui[v.Name].OutlineColor = Options[Group.."ColorHighlightsOutline"].Value
+                                            end
+                                        end
+                                    else
+                                        if game.CoreGui:FindFirstChild(v.Name) then
+                                            if game.CoreGui[v.Name].Enabled ~= false then
+                                                game.CoreGui[v.Name].Enabled = false
+                                            end
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspIcon"].Value and IconImg ~= nil then
+                                        --if Icon.Data ~= IconImg.data then
+                                            Icon.Data = IconImg.data
+                                        --end
+
+                                        if Icon.Size ~= Vector2.new(IconImg.w, IconImg.h) then
+                                            Icon.Size = Vector2.new(IconImg.w, IconImg.h)
+                                        end
+
+                                        if Icon.Position ~= Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 4) then
+                                            Icon.Position = Vector2.new(Pos.X + (Size.X / 2) - (IconImg.w / 2), Pos.Y + Size.Y + 4)
+                                        end
+
+                                        Icon.Visible = true
+
+                                        yadd = yadd + IconImg.h + 4
+                                    end
+
+                                    if Toggles[Group.."EspWeapon"].Value then
+                                        Weapon.Visible = true
+                                        if Weapon.Font ~= Drawing.Fonts[Options.TextFont.Value] then
+                                            Weapon.Font = Drawing.Fonts[Options.TextFont.Value]
+                                        end
+                                        if Weapon.Size ~= Options.TextSize.Value then
+                                            Weapon.Size = Options.TextSize.Value
+                                        end
+
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if Weapon.Color ~= Options.ColorTarget.Value then
+                                                Weapon.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Weapon.Color ~= Options[Group.."ColorWeapon"].Value then
+                                                Weapon.Color = Options[Group.."ColorWeapon"].Value
+                                            end
+                                        end
+
+                                        Weapon.Position = Vector2.new(Pos.X + (Size.X / 2), Pos.Y + Size.Y + 2 + yadd)
+
+                                        if Options.TextCase.Value == "Normal" then
+                                            if Weapon.Text ~= get_weapon(v) then
+                                                Weapon.Text = get_weapon(v)
+                                            end
+                                        elseif Options.TextCase.Value == "UPPERCASE" then
+                                            if Weapon.Text ~= string.upper(get_weapon(v)) then
+                                                Weapon.Text = string.upper(get_weapon(v))
+                                            end
+                                        elseif Options.TextCase.Value == "lowercase" then
+                                            if Weapon.Text ~= string.lower(get_weapon(v)) then
+                                                Weapon.Text = string.lower(get_weapon(v))
+                                            end
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspBox"].Value then
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if Box.Color ~= Options.ColorTarget.Value then
+                                                Box.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Box.Color ~= Options[Group.."ColorBox"].Value then
+                                                Box.Color = Options[Group.."ColorBox"].Value
+                                            end
+                                        end
+                                        Box.Position = Pos
+                                        Box.Size = Size
+                                        Box.Visible = true
+
+                                        BoxOutline.Position = Pos
+                                        BoxOutline.Size = Size
+                                        BoxOutline.Visible = true
+                                    end
+
+                                    if Toggles[Group.."EspName"].Value then
+                                        Name.Position = Vector2.new(Size.X / 2 + Pos.X, Pos.Y - 5 - Name.TextBounds.Y)
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if Name.Color ~= Options.ColorTarget.Value then
+                                                Name.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Name.Color ~= Options[Group.."ColorName"].Value then
+                                                Name.Color = Options[Group.."ColorName"].Value
+                                            end
+                                        end 
+
+
+                                        if Name.Font ~= Drawing.Fonts[Options.TextFont.Value] then
+                                            Name.Font = Drawing.Fonts[Options.TextFont.Value]
+                                        end
+                                        if Name.Size ~= Options.TextSize.Value then
+                                            Name.Size = Options.TextSize.Value
+                                        end
+                                        Name.Visible = true
+                                        if Options.TextCase.Value == "Normal" then
+                                            if Name.Text ~= v.Name then
+                                                Name.Text = v.Name
+                                            end
+                                        elseif Options.TextCase.Value == "UPPERCASE" then
+                                            if Name.Text ~= string.upper(v.Name) then
+                                                Name.Text = string.upper(v.Name)
+                                            end
+                                        elseif Options.TextCase.Value == "lowercase" then
+                                            if Name.Text ~= string.lower(v.Name) then
+                                                Name.Text = string.lower(v.Name)
+                                            end
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspHealthBar"].Value then
+                                        Health.From = Vector2.new(Pos.X - 4, Pos.Y + Size.Y)
+                                        Health.To = Vector2.new(Pos.X - 4, Health.From.Y - (Cur_Health / Max_Health) * Size.Y)
+                                        Health.Visible = true
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if Health.Color ~= Options.ColorTarget.Value then
+                                                Health.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Health.Color ~= Options[Group.."ColorHealthBar"].Value then
+                                                Health.Color = Options[Group.."ColorHealthBar"].Value
+                                            end
+                                        end
+
+                                        HealthOutline.From = Vector2.new(Health.From.X, Pos.Y + Size.Y + 1)
+                                        HealthOutline.To = Vector2.new(Health.From.X, (Health.From.Y - 1 * Size.Y) -1)
+                                        HealthOutline.Visible = true
+                                        if HealthOutline.Thickness ~= 3 then
+                                            HealthOutline.Thickness = 3
+                                        end
+                                    end
+
+                                    if Toggles[Group.."EspHealthNumber"].Value and Cur_Health <= Options.HpVis.Value then
+                                        HealthNumber.Visible = true
+                                        if HealthNumber.Font ~= Drawing.Fonts[Options.TextFont.Value] then
+                                            HealthNumber.Font = Drawing.Fonts[Options.TextFont.Value]
+                                        end
+                                        if HealthNumber.Size ~= Options.TextSize.Value then
+                                            HealthNumber.Size = Options.TextSize.Value
+                                        end
+                                        if HealthNumber.Text ~= tostring(math.floor(Cur_Health)) then
+                                            HealthNumber.Text = tostring(math.floor(Cur_Health))
+                                        end
+                                        if HealthNumber.Center ~= false then
+                                            HealthNumber.Center = false
+                                        end
+                                        if Toggles[Group.."EspHealthBar"].Value then
+                                            HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Health.To.Y - 3)
+                                        else
+                                            HealthNumber.Position = Vector2.new(Pos.X - 6 - HealthNumber.TextBounds.X, Pos.Y - 3)
+                                        end
+
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if HealthNumber.Color ~= Options.ColorTarget.Value then
+                                                HealthNumber.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if HealthNumber.Color ~= Options[Group.."ColorHealthNumber"].Value then
+                                                HealthNumber.Color = Options[Group.."ColorHealthNumber"].Value
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        else
+                            if game.CoreGui:FindFirstChild(v.Name) then
+                                game.CoreGui[v.Name]:Destroy()
+                            end
+    
+                            if PLRDS[v] then
+                                for i, v in pairs(PLRDS[v]) do
+                                    if v.Visible ~= false then
+                                        v.Visible = false
+                                    end
+                                end
+                            end
+    
+                            if get_character(v) ~= nil then
+                                for _,q in pairs(get_character(v):GetChildren()) do
+                                    if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                        q.Cham:Destroy()
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        if game.CoreGui:FindFirstChild(v.Name) then
+                            game.CoreGui[v.Name]:Destroy()
+                        end
+
+                        if PLRDS[v] then
+                            for i, v in pairs(PLRDS[v]) do
+                                if v.Visible ~= false then
+                                    v.Visible = false
+                                end
+                            end
+                        end
+
+                        if get_character(v) ~= nil then
+                            for _,q in pairs(get_character(v):GetChildren()) do
+                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                    q.Cham:Destroy()
+                                end
+                            end
+                        end
+                    end
+
+                    if Group ~= "Local" and Toggles[Group.."EspEnabled"].Value and PLRDS[v] and game_client.LocalPlayer.isAlive() then
                         local PLRD = PLRDS[v]
                         for _,v in pairs (PLRD) do
                             if v.Visible ~= false then
@@ -1397,6 +1884,53 @@ do
                                     local Icon = PLRD.Icon
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
+
+                                    if Toggles[Group.."EspChams"].Value then
+                                        for _,q in pairs(Character:GetChildren()) do
+                                            if (q:IsA("BasePart") or q:IsA("MeshPart") or q:IsA("Part")) and q.Transparency ~= 1 then
+                                                if not q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                    local Cham = Instance.new("BoxHandleAdornment", q)
+                                                    Cham.Name = "Cham"
+                                                end
+
+                                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                    if q.Cham.Parent ~= q then
+                                                        q.Cham.Parent = q
+                                                    end
+
+                                                    if q.Cham.Adornee ~= q then
+                                                        q.Cham.Adornee = q
+                                                    end
+
+                                                    if q.Cham.Transparency ~=  1 - Options[Group.."EspChamsTrans"].Value / 255 then
+                                                        q.Cham.Transparency =  1 - Options[Group.."EspChamsTrans"].Value / 255
+                                                    end
+
+                                                    if q.Cham.Color3 ~= Options[Group.."ColorChams"].Value then
+                                                        q.Cham.Color3 = Options[Group.."ColorChams"].Value
+                                                    end
+
+                                                    if q.Cham.Size ~= q.Size * 1.01 then
+                                                        q.Cham.Size = q.Size * 1.01
+                                                    end
+
+                                                    if q.Cham.ZIndex ~= 4 then
+                                                        q.Cham.ZIndex = 4
+                                                    end
+
+                                                    if q.Cham.AlwaysOnTop ~= true then
+                                                        q.Cham.AlwaysOnTop = true
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    else
+                                        for _,q in pairs(Character:GetChildren()) do
+                                            if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                                q.Cham:Destroy()
+                                            end
+                                        end
+                                    end
 
                                     if Toggles[Group.."EspHighlights"].Value then
                                         if not game.CoreGui:FindFirstChild(v.Name) then
@@ -1682,7 +2216,7 @@ do
                             if game.CoreGui:FindFirstChild(v.Name) then
 								game.CoreGui[v.Name]:Destroy()
 							end
-
+                            
                             if PLRDS[v] then
                                 for i, v in pairs(PLRDS[v]) do
                                     if v.Visible ~= false then
@@ -1690,8 +2224,16 @@ do
                                     end
                                 end
                             end
+
+                            if get_character(v) ~= nil then
+                                for _,q in pairs(get_character(v):GetChildren()) do
+                                    if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                        q.Cham:Destroy()
+                                    end
+                                end
+                            end
                         end
-                    else
+                    elseif Group ~= "Local" then
                         if game.CoreGui:FindFirstChild(v.Name) then
                             game.CoreGui[v.Name]:Destroy()
                         end
@@ -1700,6 +2242,14 @@ do
                             for i, v in pairs(PLRDS[v]) do
                                 if v.Visible ~= false then
                                     v.Visible = false
+                                end
+                            end
+                        end
+
+                        if get_character(v) ~= nil then
+                            for _,q in pairs(get_character(v):GetChildren()) do
+                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
+                                    q.Cham:Destroy()
                                 end
                             end
                         end
@@ -2400,7 +2950,7 @@ do
                         if Toggles.AGunChams.Value then
                             for _,v1 in pairs(v:GetChildren()) do
                                 if (v1:IsA("BasePart") or v1:IsA("MeshPart")) and v1.Transparency ~= 1 then
-                                    chams(v1, Options.AColorGunChams.Value, (Options.AGunChamsTrans.Value / (255 + 1)), Options.AGunChamsReflectance.Value, Options.AGunChamsMaterial.Value)
+                                    chams(v1, Options.AColorGunChams.Value, Options.AGunChamsTrans.Value / 255, Options.AGunChamsReflectance.Value, Options.AGunChamsMaterial.Value)
                                 end
                             end
                         end
@@ -2444,7 +2994,7 @@ do
                         if Toggles.AArmChams.Value then
                             for _,v1 in pairs(v:GetChildren()) do
                                 if (v1:IsA("BasePart") or v1:IsA("MeshPart")) and v1.Transparency ~= 1 then
-                                    chams(v1, Options.AColorArmChams.Value, (Options.AArmChamsTrans.Value / (255 + 1)), Options.AArmChamsReflectance.Value, Options.AArmChamsMaterial.Value)
+                                    chams_arm(v1, Options.AColorArmChams.Value, Options.AArmChamsTrans.Value / 255, Options.AArmChamsReflectance.Value, Options.AArmChamsMaterial.Value)
                                 end
                             end
                         end
@@ -2614,7 +3164,7 @@ do
 
         do -- Stance
             Library:GiveSignal(rs.RenderStepped:Connect(function()  
-                if game_client.LocalPlayer.isAlive() and Toggles.AntiEnabled.Value then
+                if game_client.LocalPlayer.isAlive() and Toggles.AntiEnabled.Value and Options.AntiKey:GetState() then
                     if Options.AntiStance.Value ~= "Off" then
                         game_client.network.send(game_client.network, "stance", string.lower(Options.AntiStance.Value))
                     end
@@ -2628,6 +3178,22 @@ do
             game_client.network.send = function(self, command, ...)
                 local args = { ... }
         
+                if command == "bullethit" then
+                    if Toggles.SupOnly.Value then return end
+
+                    if Toggles.IgnoreFriends.Value and table.find(Friends, tostring(args[1])) then return end
+                        
+                    if Toggles.HitLogs.Value then
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                    end
+                end
+
+                if command == "knifehit" then
+                    if Toggles.HitLogs.Value then
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1].Name), tostring(args[2]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                    end
+                end
+
                 if command == "debug" then
                     if args[1] == "Server Kick Message: You have been votekicked out of the server!" and Toggles.GameVotekick.Value then
                         local jobid = ""
@@ -2677,7 +3243,7 @@ do
                 end
         
                 if command == "repupdate" then   
-                    if Toggles.AntiHide.Value and game_client.LocalPlayer.isAlive() then
+                    if Toggles.AntiHide.Value and Options.AntiKey:GetState() and game_client.LocalPlayer.isAlive() then
                         args[1] = args[1] - Vector3.new(0, 1.2, 0)
                     end
                     
@@ -2720,7 +3286,10 @@ do
                 end
         
                 if command == "bullethit" then
-                    --Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), 2.5)
+                    --[[if Toggles.SupOnly.Value then return end
+
+                    if Toggles.IgnoreFriends.Value and table.find(Friends, tostring(args[1])) then return end]]
+                        
                     if Toggles.ExtraHeadsound.Value and tostring(args[3]) == "Head" then
                         local head = Instance.new("Sound")
                         head.Looped = false
@@ -2750,6 +3319,10 @@ do
         
                         body:Play()
                     end
+
+                    --[[if Toggles.HitLogs.Value then
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                    end]]
                 end
         
                 if command == "falldamage" then
