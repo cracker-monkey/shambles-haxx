@@ -1556,7 +1556,6 @@ do
                                                 chams(q, Options.LocalColorChams.Value, Options.LocalEspChamsTrans.Value / 255, Options.LocalEspChamsReflectance.Value, Options.LocalEspChamsMaterial.Value)
                                             
                                                 for _,a in pairs(q:GetChildren()) do
-                                                    print(a.Name)
                                                     if a.Name == "Pant" or a.Name == "Shirt" then
                                                         a:Destroy()
                                                     end
