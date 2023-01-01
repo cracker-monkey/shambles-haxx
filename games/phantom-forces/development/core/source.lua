@@ -691,7 +691,9 @@ do -- Visuals Tab
             LocalEsp:AddToggle('LocalEspIcon', {Text = 'Weapon Icon'})
             LocalEsp:AddDivider()
             LocalEsp:AddToggle('LocalEspChams', {Text = 'Chams'}):AddColorPicker('LocalColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
-            LocalEsp:AddSlider('LocalEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('LocalEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 1, Max = 255, Rounding = 0, Compact = true})
+            LocalEsp:AddSlider('LocalEspChamsReflectance', {Text = 'Reflectance', Default = 5, Min = 0, Max = 100, Rounding = 0, Compact = true})
+            LocalEsp:AddDropdown('LocalEspChamsMaterial', {Values = { "ForceField", "Neon", "Plastic", "Glass" }, Default = 1, Multi = false, Text = 'Material'})                                    
             LocalEsp:AddDivider()
             LocalEsp:AddToggle('LocalEspHighlights', {Text = 'Highlights'}):AddColorPicker('LocalColorHighlights', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Color'}):AddColorPicker('LocalColorHighlightsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Highlights Outline Color'})
             LocalEsp:AddToggle('LocalEspHighlightsSine', {Text = 'Pulse'})
@@ -1542,50 +1544,25 @@ do
                                     local Icon = PLRD.Icon
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
-
+                                    
                                     if Toggles[Group.."EspChams"].Value then
-                                        for _,q in pairs(Character:GetChildren()) do
-                                            if (q:IsA("BasePart") or q:IsA("MeshPart") or q:IsA("Part")) and q.Transparency ~= 1 then
-                                                if not q:FindFirstChildWhichIsA("BoxHandleAdornment") then
-                                                    local Cham = Instance.new("BoxHandleAdornment", q)
-                                                    Cham.Name = "Cham"
-                                                end
-
-                                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
-                                                    if q.Cham.Parent ~= q then
-                                                        q.Cham.Parent = q
-                                                    end
-
-                                                    if q.Cham.Adornee ~= q then
-                                                        q.Cham.Adornee = q
-                                                    end
-
-                                                    if q.Cham.Transparency ~=  1 - Options[Group.."EspChamsTrans"].Value / 255 then
-                                                        q.Cham.Transparency =  1 - Options[Group.."EspChamsTrans"].Value / 255
-                                                    end
-
-                                                    if q.Cham.Color3 ~= Options[Group.."ColorChams"].Value then
-                                                        q.Cham.Color3 = Options[Group.."ColorChams"].Value
-                                                    end
-
-                                                    if q.Cham.Size ~= q.Size * 1.01 then
-                                                        q.Cham.Size = q.Size * 1.01
-                                                    end
-
-                                                    if q.Cham.ZIndex ~= 4 then
-                                                        q.Cham.ZIndex = 4
-                                                    end
-
-                                                    if q.Cham.AlwaysOnTop ~= true then
-                                                        q.Cham.AlwaysOnTop = true
-                                                    end
-                                                end
+                                        for _,q in pairs(Character.Cosmetics:GetChildren()) do
+                                            if q.Name ~= "Head" then
+                                                q:Destroy()
                                             end
                                         end
-                                    else
                                         for _,q in pairs(Character:GetChildren()) do
-                                            if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
-                                                q.Cham:Destroy()
+                                            if (q:IsA("BasePart") or q:IsA("MeshPart") or q:IsA("Part")) and q.Transparency ~= 1 then
+                                                chams(q, Options.LocalColorChams.Value, Options.LocalEspChamsTrans.Value / 255, Options.LocalEspChamsReflectance.Value, Options.LocalEspChamsMaterial.Value)
+                                            
+                                                for _,a in pairs(q:GetChildren()) do
+                                                    print(a.Name)
+                                                    if a.Name == "Pant" or a.Name == "Shirt" then
+                                                        a:Destroy()
+                                                    end
+                                                end
+                                            elseif q:IsA("Texture") or q:IsA("Decal") then
+                                                q.Transparency = 0.999999999999
                                             end
                                         end
                                     end
@@ -1825,14 +1802,6 @@ do
                                     end
                                 end
                             end
-    
-                            if get_character(v) ~= nil then
-                                for _,q in pairs(get_character(v):GetChildren()) do
-                                    if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
-                                        q.Cham:Destroy()
-                                    end
-                                end
-                            end
                         end
                     else
                         if game.CoreGui:FindFirstChild(v.Name) then
@@ -1843,14 +1812,6 @@ do
                             for i, v in pairs(PLRDS[v]) do
                                 if v.Visible ~= false then
                                     v.Visible = false
-                                end
-                            end
-                        end
-
-                        if get_character(v) ~= nil then
-                            for _,q in pairs(get_character(v):GetChildren()) do
-                                if q:FindFirstChildWhichIsA("BoxHandleAdornment") then
-                                    q.Cham:Destroy()
                                 end
                             end
                         end
@@ -3189,6 +3150,10 @@ do
                 end
 
                 if command == "knifehit" then
+                    if Toggles.SupOnly.Value then return end
+
+                    if Toggles.IgnoreFriends.Value and table.find(Friends, tostring(args[1])) then return end
+
                     if Toggles.HitLogs.Value then
                         Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1].Name), tostring(args[2]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
                     end

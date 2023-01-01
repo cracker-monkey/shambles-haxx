@@ -83,6 +83,17 @@ function Ut.AddToPlayer(Player)
 	end
 end
 
+local Watermark = {
+    Border = Ut.New({type = "Square"}),
+    Background = Ut.New({type = "Square"}),
+    Accent = Ut.New({type = "Square"}),
+    Accent2 = Ut.New({type = "Square"}),
+    BorderLine = Ut.New({type = "Square"}),
+    Gradient = Ut.New({type = "Image"}),
+    Text = Ut.New({type = "Text"}),
+    Icon = Ut.New({type = "Image"}),
+}
+
 local Players = game.Players
 local LocalPlayer = Players.LocalPlayer
 local RunService = game.RunService
@@ -91,10 +102,15 @@ local HitPart = REvents:FindFirstChild("GGGHGGHG")
 local Camera = workspace.Camera
 local UserInputService = game.UserInputService
 local clock = 0
-local raycastparameters = RaycastParams.new()
-local OriginScanParamas = RaycastParams.new()
-OriginScanParamas.IgnoreWater = true
-OriginScanParamas.FilterType = Enum.RaycastFilterType.Whitelist 
+local fps = 0
+local RageScanParams = RaycastParams.new()
+RageScanParams.IgnoreWater = true
+RageScanParams.FilterType = Enum.RaycastFilterType.Blacklist
+local FTScanParams = RaycastParams.new()
+FTScanParams.IgnoreWater = true
+FTScanParams.FilterType = Enum.RaycastFilterType.Blacklist
+getgenv().Friends = {}
+getgenv().Priority = {}
 for i,v in pairs(LocalPlayer.PlayerGui:GetChildren()) do
     if v.ClassName == "LocalScript" then
         pcall(function()
@@ -113,97 +129,226 @@ getgenv().Tabs = {
     Lua = Window:AddTab("Lua")
 } 
 
-do -- Menu things
-    local RageBot = Tabs.Rage:AddLeftGroupbox("Rage Bot") do
-        RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
-        RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
-        RageBot:AddToggle('RageForwardTrack', {Text = 'Forward Track'})
-        RageBot:AddSlider('RageForwardTrackAmount', {Text = 'Amount', Default = 1, Min = 0, Max = 2000, Rounding = 0})
+function icons()
+    local list = listfiles("shambles haxx/Configs/icons")
+
+    local icons = {"N/A"}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.png' then
+            local pos = file:find('.png', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(icons, file:sub(pos + 1, start - 1))
+            end
+        end
     end
 
-    local Movement = Tabs.Misc:AddLeftGroupbox('Movement') do
-        Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
-        Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 500, Rounding = 0})
-        Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
-        Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 500, Rounding = 0})
-        Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
+    return icons;
+end 
+
+do -- Menu things
+    do -- Rage Tab
+        local RageBot = Tabs.Rage:AddLeftGroupbox("Rage Bot") do
+            RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
+            RageBot:AddDropdown('RageHitscan', {Values = { "Head", "Torso" }, Default = 1, Multi = false, Text = 'Hitscan Priority'})
+            RageBot:AddToggle('RageForwardTrack', {Text = 'Forward Track'})
+            RageBot:AddSlider('RageForwardTrackAmount', {Text = 'Amount', Default = 1, Min = 0, Max = 2000, Rounding = 0})
+        end
     end
      
-    local EnemyEspBox = Tabs.Visuals:AddLeftTabbox() do        
-        local EnemyEsp = EnemyEspBox:AddTab('Enemy ESP') do
-            EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
-            EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-            EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-            EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-            EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-            EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-            EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-            EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-            EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
-            EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-            EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-            EnemyEsp:AddDivider()
-            EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('EnemyColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-            EnemyEsp:AddToggle('EnemyEspChamsSine', {Text = 'Pulse'})
-            EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
-            EnemyEsp:AddSlider('EnemyEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+    do -- Visuals Tab
+        local EnemyEspBox = Tabs.Visuals:AddLeftTabbox() do        
+            local EnemyEsp = EnemyEspBox:AddTab('Enemy ESP') do
+                EnemyEsp:AddToggle('EnemyEspEnabled', {Text = 'Enabled'})
+                EnemyEsp:AddToggle('EnemyEspBox', {Text = 'Box'}):AddColorPicker('EnemyColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+                EnemyEsp:AddToggle('EnemyEspName', {Text = 'Name'}):AddColorPicker('EnemyColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+                EnemyEsp:AddToggle('EnemyEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('EnemyColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+                EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+                EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+                EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+                EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+                EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
+                EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+                EnemyEsp:AddSlider('EnemyEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+                EnemyEsp:AddDivider()
+                EnemyEsp:AddToggle('EnemyEspChams', {Text = 'Chams'}):AddColorPicker('EnemyColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('EnemyColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
+                EnemyEsp:AddToggle('EnemyEspChamsSine', {Text = 'Pulse'})
+                EnemyEsp:AddSlider('EnemyEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+                EnemyEsp:AddSlider('EnemyEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+            end
+            
+            local TeamEsp = EnemyEspBox:AddTab('Team ESP') do
+                TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
+                TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
+                TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
+                TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
+                TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
+                TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
+                TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+                TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
+                TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
+                TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
+                TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
+                TeamEsp:AddDivider()
+                TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('TeamColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
+                TeamEsp:AddToggle('TeamEspChamsSine', {Text = 'Pulse'})
+                TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+                TeamEsp:AddSlider('TeamEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+            end
+            
+            local SettingsEsp = EnemyEspBox:AddTab('Settings') do
+                SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
+                SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
+                SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
+                SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
+                SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
+            end
         end
-        
-        local TeamEsp = EnemyEspBox:AddTab('Team ESP') do
-            TeamEsp:AddToggle('TeamEspEnabled', {Text = 'Enabled'})
-            TeamEsp:AddToggle('TeamEspBox', {Text = 'Box'}):AddColorPicker('TeamColorBox', {Default = Color3.fromRGB(255, 255, 255), Title = 'Box Color'})
-            TeamEsp:AddToggle('TeamEspName', {Text = 'Name'}):AddColorPicker('TeamColorName', {Default = Color3.fromRGB(255, 255, 255), Title = 'Name Color'})
-            TeamEsp:AddToggle('TeamEspHealthBar', {Text = 'Health Bar'}):AddColorPicker('TeamColorHealthBar', {Default = Color3.fromRGB(255, 255, 0), Title = 'Health Bar Color'})
-            TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
-            TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
-            TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
-            TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
-            TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
-            TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
-            TeamEsp:AddSlider('TeamEspOutOfViewSize', {Text = 'Size', Default = 12, Min = 0, Max = 30, Rounding = 1})
-            TeamEsp:AddDivider()
-            TeamEsp:AddToggle('TeamEspChams', {Text = 'Chams'}):AddColorPicker('TeamColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'}):AddColorPicker('TeamColorChamsOutline', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Outline Color'})
-            TeamEsp:AddToggle('TeamEspChamsSine', {Text = 'Pulse'})
-            TeamEsp:AddSlider('TeamEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
-            TeamEsp:AddSlider('TeamEspOutlineChamsTrans', {Text = 'Transparency', Default = 150, Min = 0, Max = 255, Rounding = 0})
+
+        local LocalEsp = Tabs.Visuals:AddRightGroupbox('Local') do
+            LocalEsp:AddToggle('ThirdPerson', {Text = 'Third Person'}):AddKeyPicker('ThirdPersonKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Third Person', NoUI = false})
+            LocalEsp:AddSlider('ThirdPersonDistance', {Text = 'Distance', Default = 0, Min = 0, Max = 100, Rounding = 1}) 
         end
-        
-        local SettingsEsp = EnemyEspBox:AddTab('Settings') do
-            SettingsEsp:AddToggle('EspTarget', {Text = 'Display Target'}):AddColorPicker('ColorTarget', {Default = Color3.fromRGB(255, 0, 0), Title = 'Distance Color'})
-            SettingsEsp:AddDropdown('TextFont', {Values = { "UI", "System", "Plex", "Monospace" }, Default = 3, Multi = false, Text = 'Text Font'})
-            SettingsEsp:AddDropdown('TextCase', {Values = { "lowercase", "Normal", "UPPERCASE" }, Default = 2, Multi = false, Text = 'Text Case'})
-            SettingsEsp:AddSlider('TextSize', {Text = 'Text Size', Default = 13, Min = 1, Max = 34, Rounding = 0})
-            SettingsEsp:AddSlider('HpVis', {Text = 'Max HP Visibility Cap', Default = 90, Min = 0, Max = 100, Rounding = 0})
+
+        local WorldEsp = Tabs.Visuals:AddRightGroupbox('World Visuals') do
+            WorldEsp:AddToggle('WorldAmbience', {Text = 'Ambience'}):AddColorPicker('ColorInsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Inside Ambience Color'}):AddColorPicker('ColorOutsideAmbience', {Default = Color3.fromRGB(255, 255, 255), Title = 'Outside Ambience Color'})
+            WorldEsp:AddToggle('WorldTime', {Text = 'Force Time'})
+            WorldEsp:AddSlider('WorldTimeAmount', {Text = 'Custom Time', Default = 12, Min = 0, Max = 24, Rounding = 0})
+            WorldEsp:AddToggle('WorldSaturation', {Text = 'Custom Saturation'}):AddColorPicker('ColorSaturation', {Default = Color3.fromRGB(255, 255, 255), Title = 'Saturation Color'})
+            WorldEsp:AddSlider('WorldSaturationAmount', {Text = 'Saturation Density', Default = 2, Min = 0, Max = 100, Rounding = 0})
         end
     end
 
-    local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu') do
-        MenuGroup:AddButton('Unload', function() Library:Unload() end)
-        MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
+    do -- Misc Tab
+        local Movement = Tabs.Misc:AddLeftGroupbox('Movement') do
+            Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
+            Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 500, Rounding = 0})
+            Movement:AddToggle('MovementFly', {Text = 'Fly'}):AddKeyPicker('MovementFlyKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Fly', NoUI = false})
+            Movement:AddSlider('MovementFlyAmount', {Text = 'Fly Amount', Default = 60, Min = 1, Max = 500, Rounding = 0})
+            Movement:AddToggle('MovementAutoJump', {Text = 'Auto Jump'})
+        end
     end
 
-    do
-        Library.ToggleKeybind = Options.MenuKeybind
-        ThemeManager:SetLibrary(Library)
-        SaveManager:SetLibrary(Library)
-        SaveManager:IgnoreThemeSettings() 
-        SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
-        ThemeManager:SetFolder("shambles haxx/Configs/counter blox/")
-        SaveManager:SetFolder("shambles haxx/Configs/counter blox/")
-        SaveManager:BuildConfigSection(Tabs.Settings) 
-        ThemeManager:ApplyToTab(Tabs.Settings)
+    do -- Settings Tab
+        local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu') do
+            MenuGroup:AddButton('Unload', function() Library:Unload() end)
+            MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
+        end
+        
+        do     
+            load1 = tick()
 
-        Library:OnUnload(function()
-            for i,v in pairs (Players:GetPlayers()) do
-                if PLRDS[v] then
-                    for i, v in pairs(PLRDS[v]) do
-                        v:Remove()
+            Library.ToggleKeybind = Options.MenuKeybind
+            ThemeManager:SetLibrary(Library)
+            SaveManager:SetLibrary(Library)
+            SaveManager:IgnoreThemeSettings() 
+            SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
+            ThemeManager:SetFolder("shambles haxx/Configs/counter blox/")
+            SaveManager:SetFolder("shambles haxx/Configs/counter blox/")
+            SaveManager:BuildConfigSection(Tabs.Settings) 
+            ThemeManager:ApplyToTab(Tabs.Settings)
+    
+            Library:OnUnload(function()
+                for i,v in pairs (Players:GetPlayers()) do
+                    if PLRDS[v] then
+                        for i, v in pairs(PLRDS[v]) do
+                            v:Remove()
+                        end
                     end
                 end
+
+                for i,v in pairs(Watermark) do
+                    v:Remove()
+                end
+            
+                Library.Unloaded = true
+            end)
+        end
+        
+        local PlayerList = Tabs.Settings:AddRightGroupbox("Player List") do
+            PlayerList:AddDropdown('PlayerList', {Values = {}, Default = 1, Multi = false, Text = 'Player List'})
+            PlayerList:AddButton('Refresh', function()
+                for i,v in pairs(Players:GetPlayers()) do   
+                    if not table.find(Options.PlayerList.Values, v.Name) and v.Name ~= LocalPlayer.Name then
+                        table.insert(Options.PlayerList.Values, v.Name)
+                        Options.PlayerList:SetValues()
+                        Options.PlayerList:SetValue(nil)
+                    end
+                end
+            end)
+            PlayerList:AddButton('Friend', function()
+                if not table.find(Friends, Options.PlayerList.Value) then
+                    table.insert(Friends, Options.PlayerList.Value)
+                    Library:Notify("Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+                elseif table.find(Friends, Options.PlayerList.Value) then
+                    for i1, v1 in pairs(Options.PlayerList.Values) do
+                        if Options.PlayerList.Value == v1 then
+                            table.remove(Friends, i1)
+                        end
+                    end
+                    Library:Notify("Un-Friended player " ..Options.PlayerList.Value.. ".", 2.5)
+                end
+            end)
+            PlayerList:AddButton('Prioritize', function()
+                if not table.find(Priority, Options.PlayerList.Value) then
+                    table.insert(Priority, Options.PlayerList.Value)
+                    Library:Notify("Prioritized player " ..Options.PlayerList.Value.. ".", 2.5)
+                elseif table.find(Priority, Options.PlayerList.Value) then
+                    for i1, v1 in pairs(Options.PlayerList.Values) do
+                        if Options.PlayerList.Value == v1 then
+                            table.remove(Priority, i1)
+                        end
+                    end
+                    Library:Notify("Un-Prioritized player " ..Options.PlayerList.Value.. ".", 2.5)
+                end
+            end)
+        end
+
+        local Interface = Tabs.Settings:AddRightGroupbox("Interface") do
+            Interface:AddToggle('InterfaceKeybinds', {Text = 'Keybinds'})
+            Interface:AddToggle('InterfaceWatermark', {Text = 'Watermark', Default = true}):AddColorPicker('ColorWatermark', {Default = Color3.fromRGB(0, 140, 255), Title = 'Watermark Color'})
+            Interface:AddDropdown('WatermarkIcon', {Values = icons(), Default = 1, Multi = false, Text = 'Custom Logo'})
+            Interface:AddButton('Refresh', function()
+                Options.WatermarkIcon.Values = icons()
+                Options.WatermarkIcon:SetValues()
+                Options.WatermarkIcon:SetValue("N/A")
+            end)
+            Interface:AddInput('WatermarkText', {Default = 'Shambles Haxx | {user} | {fps} fps | {ping} ms | {version}', Numeric = false, Finished = false, Text = 'Custom Watermark', Placeholder = 'Watermark Text', Tooltip = "{user}, {hour}, {minute}, {second}\n{ap}, {month}, {day}, {year}\n{version}, {fps}, {ping}, {game}\n{time}, {date}"})   
+            Interface:AddToggle('RainbowAccent', {Text = 'Rainbow Accent'})
+            Interface:AddSlider('RainbowSpeed', {Text = 'Rainbow Speed', Default = 40, Min = 1, Max = 50, Rounding = 0})
+            SaveManager:LoadAutoloadConfig()
+        end 
+
+        do
+            if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
+                Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
+            else
+                Watermark.Icon.Data = readfile("")
             end
         
-            Library.Unloaded = true
-        end)
+            Options.WatermarkIcon:OnChanged(function()
+                if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
+                    Watermark.Icon.Data = readfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png")
+                else
+                    Watermark.Icon.Data = readfile("")
+                end
+            end)
+        
+            Library:SetWatermarkVisibility(false)
+            Library.KeybindFrame.Visible = Toggles.InterfaceKeybinds.Value
+        
+            Toggles.InterfaceKeybinds:OnChanged(function()
+                Library.KeybindFrame.Visible = Toggles.InterfaceKeybinds.Value
+            end)   
+        end
     end
 end
 
@@ -252,6 +397,40 @@ do -- Functions
         local result = workspace:Raycast(origin, direction, raycastparameters)
         return result and result.Instance, result and result.Position, result and result.Normal
     end
+
+    function findtextrandom(text)
+		if text:find(' @r ') then 
+			local b = text:split(' @r ')
+			return b[math.random(#b)]
+		else 
+			return text
+		end
+	end
+
+	function textboxtriggers(text)
+        local triggers = {
+            ['{user}'] = username,
+            ['{hour}'] = os.date("%H"),
+            ['{minute}'] = os.date("%M"),
+            ['{second}'] = os.date("%S"),
+            ['{ap}'] = os.date("%p"),
+            ['{month}'] = os.date("%b"),
+            ['{day}'] = os.date("%d"),
+            ['{year}'] = os.date("%Y"),
+            ['{version}'] = "0.0.8a",
+            ['{fps}'] = fps,
+            ['{ping}'] = game:GetService('Stats') ~= nil and math.floor(game:GetService('Stats').Network.ServerStatsItem["Data Ping"]:GetValue()) or "0",
+            ['{game}'] = "counter blox",
+            ['{time}'] = os.date("%H:%M:%S"),
+            ['{date}'] = os.date("%b. %d, %Y")
+         }        
+
+		for a,b in next, triggers do 
+			text = string.gsub(text, a, b)
+		end
+
+		return findtextrandom(text)
+	end
 end
 
 do -- Modules
@@ -273,7 +452,6 @@ do -- Modules
         end
     end)
 
-    
     do -- ESP Players
         Library:GiveSignal(RunService.RenderStepped:Connect(function()                
             for i,v in pairs(Players:GetPlayers()) do
@@ -655,6 +833,170 @@ do -- Modules
             end
         end))
     end
+
+    do -- Visuals
+        Library:GiveSignal(RunService.RenderStepped:Connect(function(step)                
+            fps = math.floor(1/step)
+
+            if Toggles.ThirdPerson.Value and Options.ThirdPersonKey:GetState() and LocalPlayer.CameraMaxZoomDistance ~= Options.ThirdPersonDistance.Value / 5 and LocalPlayer.CameraMinZoomDistance ~= Options.ThirdPersonDistance.Value / 5 and isAlive() then
+                LocalPlayer.CameraMinZoomDistance = Options.ThirdPersonDistance.Value / 5
+                LocalPlayer.CameraMaxZoomDistance = Options.ThirdPersonDistance.Value / 5
+            elseif LocalPlayer.CameraMaxZoomDistance ~= 0 and LocalPlayer.CameraMinZoomDistance ~= 0 and isAlive() then
+                LocalPlayer.CameraMinZoomDistance = 0
+                LocalPlayer.CameraMaxZoomDistance = 0
+            end
+
+            Watermark.Text.Text = textboxtriggers(Options.WatermarkText.Value)
+            
+            if Watermark.Text.Position ~= Vector2.new(Options.WatermarkIcon.Value == "N/A" and 58 + 4 or 58 + 27, 15) then
+                Watermark.Text.Position = Vector2.new(Options.WatermarkIcon.Value == "N/A" and 58 + 4 or 58 + 27, 15)
+            end
+        
+            if Watermark.Text.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Text.Visible = Toggles.InterfaceWatermark.Value
+            end
+            
+            if Watermark.Text.Center ~= false then
+                Watermark.Text.Center = false
+            end
+        
+            if Watermark.Border.Color ~= Color3.fromRGB(0, 0, 0) then
+                Watermark.Border.Color = Color3.fromRGB(0, 0, 0)
+            end
+        
+            if Watermark.Border.Position ~= Vector2.new(57, 8) then
+                Watermark.Border.Position = Vector2.new(57, 8)
+            end
+        
+            if Watermark.Border.Filled ~= true then
+                Watermark.Border.Filled = true
+            end
+        
+            if Watermark.Border.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Border.Visible = Toggles.InterfaceWatermark.Value
+            end
+            
+            Watermark.Border.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 9 or Watermark.Text.TextBounds.X + 34, Watermark.Text.TextBounds.Y + 13)
+        
+            if Watermark.Gradient.Position ~= Vector2.new(58, 12) then
+                Watermark.Gradient.Position = Vector2.new(58, 12)
+            end
+
+            if Watermark.Gradient.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Gradient.Visible = Toggles.InterfaceWatermark.Value
+            end
+            
+            if Watermark.Gradient.Transparency ~= 0.5 then
+                Watermark.Gradient.Transparency = 0.5
+            end
+
+            Watermark.Gradient.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 11)
+        
+            if Watermark.Background.Color ~= Color3.fromRGB(25, 25, 25) then
+                Watermark.Background.Color = Color3.fromRGB(25, 25, 25)
+            end
+        
+            if Watermark.Background.Position ~= Vector2.new(58, 9) then
+                Watermark.Background.Position = Vector2.new(58, 9)
+            end
+        
+            if Watermark.Background.Filled ~= true then
+                Watermark.Background.Filled = true
+            end
+        
+            if Watermark.Background.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Background.Visible = Toggles.InterfaceWatermark.Value
+            end
+        
+            Watermark.Background.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, Watermark.Text.TextBounds.Y + 11)
+
+            local Color = Color3.fromRGB((math.abs(math.sin(tick() / (Options.RainbowSpeed.Value - 51))) * 255), 255, 255)
+
+            if Watermark.Accent.Color ~= Color3.fromHSV(Color.R, Color.G, Color.B) and Toggles.RainbowAccent.Value then
+                Watermark.Accent.Color = Color3.fromHSV(Color.R, Color.G, Color.B)
+            elseif Watermark.Accent.Color ~= Color3.new(Options.ColorWatermark.Value.R, Options.ColorWatermark.Value.G, Options.ColorWatermark.Value.B) then
+                Watermark.Accent.Color = Color3.new(Options.ColorWatermark.Value.R, Options.ColorWatermark.Value.G, Options.ColorWatermark.Value.B)
+            end
+        
+            if Watermark.Accent.Position ~= Vector2.new(58, 9) then
+                Watermark.Accent.Position = Vector2.new(58, 9)
+            end
+        
+            if Watermark.Accent.Filled ~= true then
+                Watermark.Accent.Filled = true
+            end
+        
+            if Watermark.Accent.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Accent.Visible = Toggles.InterfaceWatermark.Value
+            end
+        
+            Watermark.Accent.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
+        
+            if Watermark.Accent2.Color ~= Color3.fromHSV(Color.R, Color.G, Color.B) and Toggles.RainbowAccent.Value then
+                Watermark.Accent2.Color = Color3.fromHSV(Color.R, Color.G, Color.B)
+            elseif Watermark.Accent2.Color ~= Color3.fromRGB(Options.ColorWatermark.Value.R * 255 - 40, Options.ColorWatermark.Value.G * 255 - 40, Options.ColorWatermark.Value.B * 255 - 40) then
+                Watermark.Accent2.Color = Color3.fromRGB(Options.ColorWatermark.Value.R * 255 - 40, Options.ColorWatermark.Value.G * 255 - 40, Options.ColorWatermark.Value.B * 255 - 40)
+            end
+        
+            if Watermark.Accent2.Position ~= Vector2.new(58, 10) then
+                Watermark.Accent2.Position = Vector2.new(58, 10)
+            end
+        
+            if Watermark.Accent2.Filled ~= true then
+                Watermark.Accent2.Filled = true
+            end
+        
+            if Watermark.Accent2.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Accent2.Visible = Toggles.InterfaceWatermark.Value
+            end
+        
+            Watermark.Accent2.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
+        
+            if Watermark.BorderLine.Color ~= Color3.fromRGB(0, 0, 0) then
+                Watermark.BorderLine.Color = Color3.fromRGB(0, 0, 0)
+            end
+        
+            if Watermark.BorderLine.Position ~= Vector2.new(58, 11) then
+                Watermark.BorderLine.Position = Vector2.new(58, 11)
+            end
+        
+            if Watermark.BorderLine.Filled ~= true then
+                Watermark.BorderLine.Filled = true
+            end
+        
+            if Watermark.BorderLine.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.BorderLine.Visible = Toggles.InterfaceWatermark.Value
+            end
+        
+            Watermark.BorderLine.Size = Vector2.new(Options.WatermarkIcon.Value == "N/A" and Watermark.Text.TextBounds.X + 7 or Watermark.Text.TextBounds.X + 32, 1)
+        
+            if Watermark.Icon.Position ~= Vector2.new(58, 12) then
+                Watermark.Icon.Position = Vector2.new(58, 12)
+            end
+        
+            if Watermark.Icon.Visible ~= Toggles.InterfaceWatermark.Value then
+                Watermark.Icon.Visible = Toggles.InterfaceWatermark.Value
+            end
+        
+            if Watermark.Icon.Size ~= Vector2.new(Watermark.Text.TextBounds.Y + 8, Watermark.Text.TextBounds.Y + 8) then
+                Watermark.Icon.Size = Vector2.new(Watermark.Text.TextBounds.Y + 8, Watermark.Text.TextBounds.Y + 8)
+            end
+
+            if Toggles.WorldAmbience.Value then
+                game.Lighting.Ambient = Options.ColorInsideAmbience.Value
+                game.Lighting.OutdoorAmbient = Options.ColorOutsideAmbience.Value
+            end
+
+            if Toggles.WorldTime.Value then
+                game.Lighting.TimeOfDay = Options.WorldTimeAmount.Value
+            end
+
+            if Toggles.WorldSaturation.Value then
+                saturationEffect.TintColor = Options.ColorSaturation.Value
+                saturationEffect.Saturation = Options.WorldSaturationAmount.Value / 50
+            end
+        end))
+    end
     
     do -- Movement
         Library:GiveSignal(RunService.RenderStepped:Connect(function()
@@ -728,133 +1070,128 @@ do -- Modules
         Library:GiveSignal(RunService.RenderStepped:Connect(function()                
             for _,v in pairs(Players:GetPlayers()) do  
                 local Now = os.clock()
-                if Toggles.RageEnabled.Value and Options.RageKey:GetState() and client.gun.Melee ~= true and v.Team ~= LocalPlayer.Team and isAlive(v) and isAlive() and client.gun.Penetration ~= nil then
+                if Toggles.RageEnabled.Value and Options.RageKey:GetState() and client.gun.Melee ~= true and v.Team ~= LocalPlayer.Team and isAlive(v) and isAlive() and client.gun.Penetration ~= nil and not v.Character:FindFirstChildOfClass("ForceField") then
                     if (Now - clock < (client.gun.FireRate or 0.5)) then
                         return
                     end
-
+                
                     clock = Now
                     
                     local character = v.Character
-
+                
                     local origin = Camera.CFrame.Position
-
+                
                     local map = workspace:FindFirstChild("Map")
-                    if map == nil then return end
-
-                    --[[OriginScanParamas.FilterDescendantsInstances = {
+                    if not map then return end
+                
+                    --[[RageScanParams.FilterDescendantsInstances = {
                         LocalPlayer.Character, Camera, map:FindFirstChild("Clips"), map:FindFirstChild("Debris"), map:FindFirstChild("SpawnPoints"), workspace:FindFirstChild("Ray_Ignore")
                     }]]
-
-                    local v2 = character.Head.Position - origin
+                
+                    local direction = (character.Head.Position - origin)
                     
-                    local passed = false
-                    local mod = 1
+                
                     local maximum_penetration = 0
-                    local pen = client.gun.Penetration * 0.01
+                    local penetrationPower = (client.gun.Penetration or 50) * 0.01
                     local DamageModifier = 1
-                    local ignorelist = {
-                        LocalPlayer.Character, Camera, map:FindFirstChild("Clips"), map:FindFirstChild("Debris"), map:FindFirstChild("SpawnPoints"), workspace:FindFirstChild("Ray_Ignore")
-                    }
+                    local ignorelist = {character, LocalPlayer.Character, Camera, map:FindFirstChild("Clips"), map:FindFirstChild("Debris"), map:FindFirstChild("SpawnPoints"), workspace:FindFirstChild("Ray_Ignore")}
+                    -- add the enemy character to this ignore list
+                
+                    RageScanParams.FilterDescendantsInstances = ignorelist
+                    local results = {}
+                
+                    -- office, this process is done 4 times, you are able to penetrate up to 4 walls in counter blox
+                    --repeat
+                        local Result = workspace:Raycast(origin, direction, RageScanParams)
+                        --table.insert(results, Result)
+                    --until #results >= 4
 
-                    if character:FindFirstChild("BackC4") then
-                        table.insert(ignorelist, character.BackC4)
-                    end
-                    if character:FindFirstChild("Gun") then
-                        table.insert(ignorelist, character.Gun)
-                    end
-                    
-                    OriginScanParamas.FilterDescendantsInstances = ignorelist
-
-                    local direction = (character.Head.Position - origin) * pen
-                    local result = raycast(origin, direction, ignorelist)
-                    if not result then
-                        print('hi')
-                        if Toggles.RageForwardTrack.Value then
-                            local Velocity = character.HumanoidRootPart.Velocity
-                            local extrapolateTime = Options.RageForwardTrackAmount.Value / 1000
-                            local extrapolatedVector = Velocity * extrapolateTime
-                            local _, a, positionHit = raycast(character.Head.Position, extrapolatedVector, ignorelist)
-                            local extrapolatedpos = positionHit
-
-                            client.firebullet()
-                            HitPart:FireServer(unpack(hitpart_args(character.Head, extrapolatedpos, 2)))
-                        else
-                            client.firebullet()
-                            HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                        end
-                    else
-                        local parthit = result
-                        local hitmat = parthit.Material
-                        table.insert(ignorelist, parthit)
-                        mod = (hitmat == Enum.Material.DiamondPlate) and 3 
-                        or ((hitmat == Enum.Material.CorrodedMetal) or (hitmat == Enum.Material.Metal) or (hitmat == Enum.Material.Concrete) or (hitmat == Enum.Material.Brick)) and 2 
-                        or ((hitmat == Enum.Material.Wood) or (hitmat == Enum.Material.WoodPlanks) or (parthit.Name == "Grate")) and 0.1 
-                        or (parthit.Name == "nowallbang") and 100 
-                        or (parthit:FindFirstChild("PartModifier")) and tonumber(parthit.PartModifier.Value) 
-                        or ((parthit.Transparency == 1) or (not parthit.CanCollide) or (parthit.Name == "Glass") or (parthit.Name == "Cardboard")) and 0 
-                        or 1
-                        if mod <= 0 then return end
-                        local maxpen = (pen - maximum_penetration) / mod
-                        local reverse_direction = v2.Unit * maxpen
-                        local end_result = raycast(result.Position + reverse_direction, reverse_direction * -2, ignorelist)
-                        if not end_result then return end
-                                   
-                        local lol = {
-                            Head = 4,
-                            HeadHB = 4,
-                            FakeHead = 4,
-                            LeftFoot = 0.75,
-                            RightFoot = 0.75,
-                            LeftUpperLeg = 0.75,
-                            LeftLowerLeg = 0.75,
-                            RightLowerLeg = 0.75,
-                            RightUpperLeg = 0.75,
-                            LeftUpperArm = 0.75,
-                            LeftLowerArm = 0.75,
-                            RightLowerArm = 0.75,
-                            RightUpperArm = 0.75,
-                            LowerTorso = 1.25
-                        }
-
-                        local pen_distance = (end_result.Position - result.Position).Magnitude * mod 
-                        maximum_penetration += pen_distance
-                        DamageModifier = 1 - (maximum_penetration / pen)
-
-                        if table.find(lol, parthit.Name) then
+                    --for i = 1, #results do
+                        if not Result then
                             if Toggles.RageForwardTrack.Value then
-                                local Velocity = character.HumanoidRootPart.Velocity
-                                local extrapolateTime = Options.RageForwardTrackAmount.Value / 1000
-                                local extrapolatedVector = Velocity * extrapolateTime
-                                local _, a, positionHit = raycast(character.Head.Position, extrapolatedVector, ignorelist)
-                                local extrapolatedpos = positionHit
-    
-                                client.firebullet()
-                                HitPart:FireServer(unpack(hitpart_args(character.Head, extrapolatedpos, lol[parthit.Name])))
+                                local vel = character.HumanoidRootPart.Velocity
+                                local amount = Options.RageForwardTrackAmount.Value / 1000
+                                local vect = vel * amount
+                                local poshit = workspace:Raycast(character.Head.Position, vect, RageScanParams)
+                                if not poshit then
+                                    client.firebullet()
+                                    HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                                else
+                                    client.firebullet()
+                                    HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))    
+                                end
                             else
                                 client.firebullet()
-                                HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, lol[parthit.Name])))
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                            end
+                        else
+                            local Hitpos = Result.Position
+                            local PartHit = Result.Instance
+                            local hitmat = PartHit.Material
+                            table.insert(ignorelist, PartHit)
+                    
+                            RageScanParams.FilterDescendantsInstances = ignorelist
+                    
+                            local mod = 1
+                            mod = (hitmat == Enum.Material.DiamondPlate) and 3 
+                                or ((hitmat == Enum.Material.CorrodedMetal) or (hitmat == Enum.Material.Metal) or (hitmat == Enum.Material.Concrete) or (hitmat == Enum.Material.Brick)) and 2 
+                                or ((hitmat == Enum.Material.Wood) or (hitmat == Enum.Material.WoodPlanks) or (PartHit.Name == "Grate")) and 0.1 
+                                or (PartHit.Name == "nowallbang") and 100 
+                                or (PartHit:FindFirstChild("PartModifier")) and tonumber(PartHit.PartModifier.Value) 
+                                or ((PartHit.Transparency == 1) or (not PartHit.CanCollide) or (PartHit.Name == "Glass") or (PartHit.Name == "Cardboard")) and 0 
+                                or 1
+                            if mod <= 0 then 
+                                if Toggles.RageForwardTrack.Value then
+                                    local vel = character.HumanoidRootPart.Velocity
+                                    local amount = Options.RageForwardTrackAmount.Value
+                                    local vect = vel * amount
+                                    local poshit = workspace:Raycast(character.Head.Position, vect, RageScanParams)
+                                    if poshit then
+                                        client.firebullet()
+                                        HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))
+                                    else
+                                        client.firebullet()
+                                        HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                                    end
+                                else
+                                    client.firebullet()
+                                    HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                                end
+                                return;
+                            end
+                            local maxpen = (penetrationPower - maximum_penetration) / mod
+                            local reverse_direction = direction.Unit * maxpen
+                            local end_result = workspace:Raycast(Hitpos + reverse_direction, reverse_direction * -2, RageScanParams)
+                            if not end_result then 
+                                return 
+                            end
+                            
+                            local pen_distance = (end_result.Position - Hitpos).Magnitude * mod 
+                            maximum_penetration += pen_distance
+                            DamageModifier = 1 - (maximum_penetration / penetrationPower)
+                    
+                            if (maximum_penetration >= penetrationPower or DamageModifier <= 0) then
+                                return
+                            end
+
+                            if Toggles.RageForwardTrack.Value then
+                                local vel = character.HumanoidRootPart.Velocity
+                                local amount = Options.RageForwardTrackAmount.Value / 1000
+                                local vect = vel * amount
+                                local poshit = workspace:Raycast(character.Head.Position, vect, RageScanParams)
+                                if poshit then
+                                    client.firebullet()
+                                    HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))
+                                else
+                                    client.firebullet()
+                                    HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                                end
+                            else
+                                client.firebullet()
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
                             end
                         end
-
-                        if (maximum_penetration >= pen or DamageModifier <= 0) then return end
-
-                        print(parthit.Name, mod, pen, DamageModifier)
-
-                        if Toggles.RageForwardTrack.Value then
-                            local Velocity = character.HumanoidRootPart.Velocity
-                            local extrapolateTime = Options.RageForwardTrackAmount.Value / 1000
-                            local extrapolatedVector = Velocity * extrapolateTime
-                            local _, a, positionHit = raycast(character.Head.Position, extrapolatedVector, ignorelist)
-                            local extrapolatedpos = positionHit
-
-                            client.firebullet()
-                            HitPart:FireServer(unpack(hitpart_args(character.Head, extrapolatedpos, 2)))
-                        else
-                            client.firebullet()
-                            HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                        end
-                   end
+                    --end
                 end
             end
         end))
