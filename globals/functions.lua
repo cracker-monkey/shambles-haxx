@@ -30,6 +30,8 @@ do
                 game_client.camera_interface = v
             elseif rawget(v, 'getFirerate') and rawget(v, "getFiremode") then -- Weapon Stat Hooks
                 game_client.firearm_object = v
+            elseif rawget(v, 'meleeSway') then
+                game_client.melee_object = v
             elseif rawget(v, 'canMelee') and rawget(v, "_processMeleeStateChange") then -- Melee Stat Hooks
                 game_client.melee_object = v
             elseif rawget(v, 'canCancelThrow') and rawget(v, "canThrow") then -- Grenade Stat Hooks

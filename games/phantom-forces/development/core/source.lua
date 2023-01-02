@@ -15,6 +15,14 @@ local alive = false
 local fovcircles = {}
 local Ut = {}
 
+local skeleton_parts = { 
+    "Head", 
+    "Right Arm", 
+    "Right Leg", 
+    "Left Leg", 
+    "Left Arm" 
+}
+
 Ut.AutoDo = {
 	Line = {
 		Thickness = 1,
@@ -84,6 +92,7 @@ function Ut.AddToPlayer(Player)
 		PLRDS[Player] = {
 			Offscreen = Ut.New({type = "Triangle"}),
 			Name = Ut.New({type = "Text"}),
+            Level = Ut.New({type = "Text"}),
 			Distance = Ut.New({type = "Text"}),
 			BoxOutline = Ut.New({type = "Square", out = true}),
 			Box = Ut.New({type = "Square"}),
@@ -93,6 +102,11 @@ function Ut.AddToPlayer(Player)
 			Weapon = Ut.New({type = "Text"}),
 			Team = Ut.New({type = "Text"}),
             Icon = Ut.New({type = "Image"}),
+            Head = Ut.New({type = "Line"}),
+            ["Right Arm"] = Ut.New({type = "Line"}),
+            ["Right Leg"] = Ut.New({type = "Line"}),
+            ["Left Leg"] = Ut.New({type = "Line"}),
+            ["Left Arm"] = Ut.New({type = "Line"}),
 		}
 	end
 end
@@ -191,6 +205,8 @@ local cache                     = {
     shake = game_client.main_camera_object.shake, 
     gsway = game_client.firearm_object.gunSway, 
     wsway = game_client.firearm_object.walkSway,
+    msway = game_client.melee_object.meleeSway,
+    mwsway = game_client.melee_object.walkSway,
 }
 local raycastparameters         = RaycastParams.new()
 local tableinfo                 = { firepos = BarrelPos, bullets = {}, camerapos = BarrelPos, }
@@ -199,6 +215,17 @@ local BarrelPos
 local RPos
 getgenv().Friends = {}
 getgenv().Priority = {}
+local teamdata = {}
+do
+    local container = LocalPlayer.PlayerGui.LeaderboardScreenGui.DisplayScoreFrame.Container
+    local phantoms = container:WaitForChild("DisplayPhantomBoard")
+    local ghosts = container:WaitForChild("DisplayGhostBoard")
+    local phac = phantoms:WaitForChild("Container"):GetChildren()
+    local ghoc = ghosts:WaitForChild("Container"):GetChildren()
+    
+    teamdata[1] = phac
+    teamdata[2] = ghoc
+end
 
 function sounds()
     local list = listfiles("shambles haxx/Configs/sounds")
@@ -250,7 +277,7 @@ function icons()
     return icons;
 end 
 
-local gunicons = {
+local gunicons = { 
     ["1858 CARBINE"] = {"iVBORw0KGgoAAAANSUhEUgAAADIAAAAJCAYAAABwgn/fAAABHUlEQVR4nNXUTyuEURQG8N/LSEiSv7GzseMjkI/B3sqSvY/hYxBJsZCVwUIRamRnMyl/R2ia1+K+Y2YxmsHL5Knbvfd07j3Pec7pRHEcSwkjGMVSla0dByhW2frQg1sU8JZC7IkoxURacY1BRImtiEwN3wfcIMYmnn8avFaQr6IFk5jDkIrCbVjAPHI4w4lQiWPcpRD7A9UV6cAAhpO9v+pePndiJSE1jRlMoVdQN48dvGAVu3hKk/BniOI4XsQyur75Rw6H2BKUvhd6/9UfJUFIJMI5xht8k8cG9oRe30/2Arrx+As86yIjtEShjt8p1pOVRSmxtwvKl9GUJAgVGcOlyqQp4UIgnMU2rppDr3FkMIs1Yd5ncSS0yr/CO58sURmvjH21AAAAAElFTkSuQmCC", 50, 9},
     ["1858 NEW ARMY"] = {"iVBORw0KGgoAAAANSUhEUgAAACkAAAAPCAYAAAB5lebdAAABhUlEQVR4nM3VPWsVQRTG8d9efAVFBG0kpBIFtRRsAgpWphAsLIKVIH4E/Qo2phU7LawUG8HCSlEUJOlEsVKITUgUBV8iV3ksZoV1c+PdEO/FPwwMZ2bOPDzn7GyVxBCOYg7b8RST+Njasw378BDPEXxGf1jyIZzF7aqDyFM4j9NYwa4NXrxuuoiEuzgzYi2/+YL7zcCmDoe24sCQPfN18in0Oorp4yreDMg13wx0EXkDh+v5N6U329zBFSxhT2ttCU/wAm/xCR/wEosd7l+z3JO4hOM40ogHX+vkuxvxR1hWXF/GPcWp93jVRch6Rc7gmm4fyBwe1CIfK07/e5I0x4kkP7OafpLXSWaTTCU5mOR6kqp1fiSj2ZM7cdOfjb+CC3iGY1hQ+kvtXqenYaM0RV5UerHJLG7V85PYj73YoTT+eKgt3ZJkYUCZp1vWT9R7R17iQeU+h4m2fqXMTd6N3LUBVEkq5Q071Fr7gc3jl7SanvJPbgukPLr/BT1cXmPt+ziF/I1fmt1T3HjM+CIAAAAASUVORK5CYII=", 41, 15},
     ["AA-12"] = {"iVBORw0KGgoAAAANSUhEUgAAACcAAAAPCAYAAABnXNZuAAABdElEQVR4nM3Vv0odQRQG8J9iKgXjDQQ7DVgknU1ICKkkWFmk0MoulT5BCh8hL5A8gyDYpEkr5A9RbIKVhSIIFjfR/FFvNJNizoXNYszuXgl+MMyZmbNnvv327DlSSmqOuymlzQbPVRlLxXW/+niAhYq+Qxiv6HsHU8WNATxDH44qBBjBQxzjZwX/OXTwDoP/8H2Mm8WNvpRSqnDJ/8JnWcFDsnLXCaeY7i6um3In+NRdVFXuGz5iD0/lRL8M51iX87iD73HxcdgdfMWZ/AnP8SXiv+0GuUi5s2D/Hh9i3ooAMIvlsNewH/YUboX9CzdibowB7AaBLpmNeLu/ofhXz4jkxRs8Cbsfw3KC90RurIb/MF6F/RqjaOERyl+g1Su5uhX8Rco4TCndLp29TH/ifq8do26HmC+odlA6a5fWrUZqFVCX3Cp2sH3B2ZWTq1uEF2OexHO5na3IZaOMkea0Mpp2iM0YE7gnV/U1/JAVbMu1sSf8Bjx4QyzAKlIYAAAAAElFTkSuQmCC", 39, 15},
@@ -643,7 +670,11 @@ do -- Visuals Tab
             EnemyEsp:AddToggle('EnemyEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('EnemyColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
             EnemyEsp:AddToggle('EnemyEspWeapon', {Text = 'Weapon'}):AddColorPicker('EnemyColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
             EnemyEsp:AddToggle('EnemyEspIcon', {Text = 'Weapon Icon'})
-            EnemyEsp:AddToggle('EnemyEspDistance', {Text = 'Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+            EnemyEsp:AddToggle('EnemyEspSkeleton', {Text = 'Skeleton'}):AddColorPicker('EnemyColorSkeleton', {Default = Color3.fromRGB(255, 255, 255), Title = 'Skeleton Color'})
+            EnemyEsp:AddDivider()
+            EnemyEsp:AddToggle('EnemyEspLevel', {Text = '[F] Level'}):AddColorPicker('EnemyColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
+            EnemyEsp:AddToggle('EnemyEspDistance', {Text = '[F] Distance'}):AddColorPicker('EnemyColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+            EnemyEsp:AddDivider()
             EnemyEsp:AddToggle('EnemyEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('EnemyColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
             EnemyEsp:AddToggle('EnemyEspOutOfViewSine', {Text = 'Pulse'})
             EnemyEsp:AddSlider('EnemyEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
@@ -666,6 +697,11 @@ do -- Visuals Tab
             TeamEsp:AddToggle('TeamEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('TeamColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
             TeamEsp:AddToggle('TeamEspWeapon', {Text = 'Weapon'}):AddColorPicker('TeamColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
             TeamEsp:AddToggle('TeamEspIcon', {Text = 'Weapon Icon'})
+            TeamEsp:AddToggle('TeamEspSkeleton', {Text = 'Skeleton'}):AddColorPicker('TeamColorSkeleton', {Default = Color3.fromRGB(255, 255, 255), Title = 'Skeleton Color'})
+            TeamEsp:AddDivider()
+            TeamEsp:AddToggle('TeamEspLevel', {Text = '[F] Level'}):AddColorPicker('TeamColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
+            TeamEsp:AddToggle('TeamEspDistance', {Text = '[F] Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
+            TeamEsp:AddDivider()
             TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
             TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
             TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
@@ -689,6 +725,9 @@ do -- Visuals Tab
             LocalEsp:AddToggle('LocalEspHealthNumber', {Text = 'Health Number'}):AddColorPicker('LocalColorHealthNumber', {Default = Color3.fromRGB(255, 255, 255), Title = 'Health Number Color'})
             LocalEsp:AddToggle('LocalEspWeapon', {Text = 'Weapon'}):AddColorPicker('LocalColorWeapon', {Default = Color3.fromRGB(255, 255, 255), Title = 'Weapon Color'})
             LocalEsp:AddToggle('LocalEspIcon', {Text = 'Weapon Icon'})
+            LocalEsp:AddToggle('LocalEspSkeleton', {Text = 'Skeleton'}):AddColorPicker('LocalColorSkeleton', {Default = Color3.fromRGB(255, 255, 255), Title = 'Skeleton Color'})
+            LocalEsp:AddDivider()
+            LocalEsp:AddToggle('TLocalEspLevel', {Text = '[F] Level'}):AddColorPicker('LocalColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
             LocalEsp:AddDivider()
             LocalEsp:AddToggle('LocalEspChams', {Text = 'Chams'}):AddColorPicker('LocalColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
             LocalEsp:AddSlider('LocalEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 1, Max = 255, Rounding = 0, Compact = true})
@@ -744,6 +783,14 @@ do -- Visuals Tab
             LocalEsp:AddSlider('ViewModelPitch', {Text = 'Pitch', Default = 0, Min = -360, Max = 360, Rounding = 0})
             LocalEsp:AddSlider('ViewModelYaw', {Text = 'Yaw', Default = 0, Min = -360, Max = 360, Rounding = 0})
             LocalEsp:AddSlider('ViewModelRoll', {Text = 'Roll', Default = 0, Min = -360, Max = 360, Rounding = 0})
+            LocalEsp:AddButton('Reset Viewmodel', function() 
+                Options.ViewModelX:SetValue(0)
+                Options.ViewModelY:SetValue(0)
+                Options.ViewModelZ:SetValue(0)
+                Options.ViewModelPitch:SetValue(0)
+                Options.ViewModelYaw:SetValue(0)
+                Options.ViewModelRoll:SetValue(0)
+            end)
             LocalEsp:AddToggle('ViewModelBob', {Text = 'Custom Gun Bob'})
             LocalEsp:AddSlider('ViewModelBobSpeed', {Text = 'Speed', Default = 50, Min = 1, Max = 200, Rounding = 0})
             LocalEsp:AddSlider('ViewModelBobAmount', {Text = 'Amount', Default = 3, Min = 0, Max = 10, Rounding = 5})
@@ -804,12 +851,15 @@ do -- Misc Tab
         Extra:AddSlider('HitLogTime', {Text = 'Time', Default = 3, Min = 1, Max = 10, Rounding = 0})
         Extra:AddToggle('ExtraHeadsound', {Text = 'Head Sound'})
         Extra:AddSlider('ExtraHeadsoundVolume', {Text = 'Head Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddSlider('ExtraHeadsoundPitch', {Text = 'Head Sound Pitch', Default = 100, Min = 1, Max = 300, Rounding = 0})
         Extra:AddDropdown('ExtraHeadsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Head Sound'})
         Extra:AddToggle('ExtraBodysound', {Text = 'Body Sound'})
         Extra:AddSlider('ExtraBodysoundVolume', {Text = 'Body Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddSlider('ExtraBodysoundPitch', {Text = 'Body Sound Pitch', Default = 100, Min = 1, Max = 300, Rounding = 0})
         Extra:AddDropdown('ExtraBodysoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Body Sound'})
         Extra:AddToggle('ExtraGunSound', {Text = 'Gun Sound'})
         Extra:AddSlider('ExtraGunsoundVolume', {Text = 'Gun Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+        Extra:AddSlider('ExtraGunsoundPitch', {Text = 'Gun Sound Pitch', Default = 100, Min = 1, Max = 300, Rounding = 0})
         Extra:AddDropdown('ExtraGunsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Gun Sound'})
         Extra:AddButton('Refresh', function()
             Options.ExtraHeadsoundId.Values = sounds()
@@ -953,11 +1003,9 @@ do -- Checks
     load1 = tick()
 
     Library:OnUnload(function()
-        for i,v in pairs (Players:GetPlayers()) do
-            if PLRDS[v] then
-                for i, v in pairs(PLRDS[v]) do
-                    v:Remove()
-                end
+        if PLRDS[v] then
+            for i, v in pairs(PLRDS[v]) do
+                v:Remove()
             end
         end
 
@@ -998,10 +1046,8 @@ do
 
     Players.PlayerRemoving:Connect(function(Player)
         if PLRDS[Player] then
-            for i,v in pairs(PLRDS[Player]) do
-                if v then
-                    v:Remove()
-                end
+            for i, v in pairs(PLRDS[Player]) do
+                v:Remove()
             end
 
             PLRDS[Player] = nil
@@ -1168,6 +1214,18 @@ do
 
             if entry then
                 return entry:getHealth()
+            end
+        end
+    end
+
+    function get_level(player)
+        if player == LocalPlayer and fake_rep_object ~= nil then
+            return fake_rep_object.lastlevel
+        else
+            local entry = game_client.replication_interface.getEntry(player)
+
+            if entry then
+                return entry.lastlevel
             end
         end
     end
@@ -1510,6 +1568,11 @@ do
                 
                 for i,v in pairs(Players:GetPlayers()) do
                     local Group = "Enemy"
+                    local tdata = teamdata[1]
+                    
+                    if v.Team == "Ghosts" then
+                        tdata = teamdata[2]
+                    end
 
                     if v == LocalPlayer then
                         Group = "Local"
@@ -1544,6 +1607,35 @@ do
                                     local Icon = PLRD.Icon
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
+
+                                    local torsopos = Camera:WorldToViewportPoint(Character.Torso.Position)
+
+                                    for _,s in pairs (skeleton_parts) do
+                                        if Toggles[Group.."EspSkeleton"].Value and Character:FindFirstChild("Torso") and torsopos then
+                                            local line = PLRD[s]
+                                            local pos = Camera:WorldToViewportPoint(Character:FindFirstChild(s).Position)
+
+                                            line.From = Vector2.new(pos.x, pos.y)
+                                            line.To = Vector2.new(torsopos.x, torsopos.y)
+                                            if line.Visible ~= true then
+                                                line.Visible = true
+                                            end
+                                            if line.Thickness ~= 1 then
+                                                line.Thickness = 1
+                                            end
+                                            if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                                if line.Color ~= Options.ColorTarget.Value then
+                                                    line.Color = Options.ColorTarget.Value
+                                                end
+                                            else
+                                                if line.Color ~= Options[Group.."ColorSkeleton"].Value then
+                                                    line.Color = Options[Group.."ColorSkeleton"].Value
+                                                end
+                                            end
+                                        else
+                                            PLRD[s].Visible = false
+                                        end
+                                    end
                                     
                                     if Toggles[Group.."EspChams"].Value then
                                         for _,q in pairs(Character.Cosmetics:GetChildren()) do
@@ -1557,7 +1649,7 @@ do
                                             
                                                 for _,a in pairs(q:GetChildren()) do
                                                     if a.Name == "Pant" or a.Name == "Shirt" then
-                                                        a:Destroy()
+                                                        a.Texture = "rbxassetid//1"
                                                     end
                                                 end
                                             elseif q:IsA("Texture") or q:IsA("Decal") then
@@ -1800,7 +1892,7 @@ do
                                         v.Visible = false
                                     end
                                 end
-                            end
+                            end    
                         end
                     else
                         if game.CoreGui:FindFirstChild(v.Name) then
@@ -1842,8 +1934,47 @@ do
                                     local HealthNumber = PLRD.HealthNumber
                                     local Distance = PLRD.Distance
                                     local Icon = PLRD.Icon
+                                    local Level = PLRD.Level
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
+                                    local lvl = 0
+                                    
+                                    for _,t in pairs(tdata) do
+                                        if not t:IsA("UIListLayout") then
+                                            if t:FindFirstChild("TextPlayer").Text == v.Name then
+                                                lvl = t.TextRank.Text
+                                            end
+                                        end
+                                    end
+
+                                    local torsopos = Camera:WorldToViewportPoint(Character.Torso.Position)
+
+                                    for _,s in pairs (skeleton_parts) do
+                                        if Toggles[Group.."EspSkeleton"].Value and Character:FindFirstChild("Torso") and torsopos then
+                                            local line = PLRD[s]
+                                            local pos = Camera:WorldToViewportPoint(Character:FindFirstChild(s).Position)
+
+                                            line.From = Vector2.new(pos.x, pos.y)
+                                            line.To = Vector2.new(torsopos.x, torsopos.y)
+                                            if line.Visible ~= true then
+                                                line.Visible = true
+                                            end
+                                            if line.Thickness ~= 1 then
+                                                line.Thickness = 1
+                                            end
+                                            if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                                if line.Color ~= Options.ColorTarget.Value then
+                                                    line.Color = Options.ColorTarget.Value
+                                                end
+                                            else
+                                                if line.Color ~= Options[Group.."ColorSkeleton"].Value then
+                                                    line.Color = Options[Group.."ColorSkeleton"].Value
+                                                end
+                                            end
+                                        else
+                                            PLRD[s].Visible = false
+                                        end
+                                    end
 
                                     if Toggles[Group.."EspChams"].Value then
                                         for _,q in pairs(Character:GetChildren()) do
@@ -2114,6 +2245,42 @@ do
                                         end
                                     end
 
+                                    if Toggles[Group.."EspLevel"].Value then
+                                        Level.Visible = true
+                                        if Level.Font ~= Drawing.Fonts[Options.TextFont.Value] then
+                                            Level.Font = Drawing.Fonts[Options.TextFont.Value]
+                                        end
+                                        if Level.Size ~= Options.TextSize.Value then
+                                            Level.Size = Options.TextSize.Value
+                                        end
+                                        if Options.TextCase.Value == "Normal" then
+                                            if Level.Text ~= "LVL " ..lvl then
+                                                Level.Text = "LVL " ..lvl
+                                            end
+                                        elseif Options.TextCase.Value == "UPPERCASE" then
+                                            if Level.Text ~= string.upper("LVL " ..lvl) then
+                                                Level.Text = string.upper("LVL " ..lvl)
+                                            end
+                                        elseif Options.TextCase.Value == "lowercase" then
+                                            if Level.Text ~= string.lower("LVL " ..lvl) then
+                                                Level.Text = string.lower("LVL " ..lvl)
+                                            end
+                                        end
+                                        if Toggles.EspTarget.Value and rage.target ~= nil and v.Name == rage.target.Name then
+                                            if Level.Color ~= Options.ColorTarget.Value then
+                                                Level.Color = Options.ColorTarget.Value
+                                            end
+                                        else
+                                            if Level.Color ~= Options[Group.."ColorLevel"].Value then
+                                                Level.Color = Options[Group.."ColorLevel"].Value
+                                            end
+                                        end
+                                        Level.Position = Vector2.new(Pos.X + Size.X + 3, Pos.Y - 3)
+                                        if Level.Center ~= false then
+                                            Level.Center = false
+                                        end
+                                    end
+
                                     if Toggles[Group.."EspDistance"].Value then
                                         Distance.Visible = true
                                         if Distance.Font ~= Drawing.Fonts[Options.TextFont.Value] then
@@ -2134,7 +2301,7 @@ do
                                                 Distance.Color = Options[Group.."ColorDistance"].Value
                                             end
                                         end
-                                        Distance.Position = Vector2.new(Pos.X + Size.X + 3, Pos.Y - 3)
+                                        Distance.Position = Vector2.new(Pos.X + Size.X + 3, Pos.Y - 3 + ypos)
                                         if Distance.Center ~= false then
                                             Distance.Center = false
                                         end
@@ -2183,7 +2350,7 @@ do
                                         v.Visible = false
                                     end
                                 end
-                            end
+                            end    
 
                             if get_character(v) ~= nil then
                                 for _,q in pairs(get_character(v):GetChildren()) do
@@ -3120,6 +3287,60 @@ do
 
                 return cache.gsway(...)
             end
+
+            game_client.firearm_object.gunSway = function(...) 
+                if Toggles.ViewModel.Value then
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+
+                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                    end
+
+                    return angle               
+                elseif Toggles.NoSway.Value then
+                    return CFrame.new() 
+                end 
+
+                return cache.gsway(...)
+            end
+
+            game_client.melee_object.meleeSway = function(...)
+                if Toggles.ViewModel.Value then
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+
+                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                    end
+
+                    return angle               
+                elseif Toggles.NoSway.Value then
+                    return CFrame.new() 
+                end 
+
+                return cache.msway(...)
+            end
+
+            game_client.melee_object.walkSway = function(...)
+                if Toggles.ViewModel.Value then
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+
+                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                    end
+
+                    return angle               
+                elseif Toggles.NoSway.Value then
+                    return CFrame.new() 
+                end 
+
+                return cache.mwsway(...)
+            end
         end
 
         do -- Stance
@@ -3181,6 +3402,7 @@ do
                         gun.Looped = false   
                         gun.Volume = Options.ExtraGunsoundVolume.Value / 10
                         gun.Parent = workspace
+                        gun.Pitch = Options.ExtraGunsoundPitch.Value / 100
         
                         if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3") then
                             gun.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraGunsoundId.Value..".mp3")
@@ -3259,6 +3481,7 @@ do
                         head.Looped = false
                         head.Parent = workspace
                         head.Volume = Options.ExtraHeadsoundVolume.Value / 10
+                        head.Pitch = Options.ExtraHeadsoundPitch.Value / 100
         
                         if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3") then
                             head.SoundId = getsynasset(shambles.workspace.."/Configs/sounds/"..Options.ExtraHeadsoundId.Value..".mp3")
@@ -3273,6 +3496,7 @@ do
                         local body = Instance.new("Sound")
                         body.Looped = false
                         body.Parent = workspace            
+                        body.Pitch = Options.ExtraBodysoundPitch.Value / 100
                         body.Volume = Options.ExtraBodysoundVolume.Value / 10
         
                         if isfile(shambles.workspace.."/Configs/sounds/"..Options.ExtraBodysoundId.Value..".mp3") then

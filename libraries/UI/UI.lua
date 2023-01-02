@@ -1147,6 +1147,7 @@ do
 
             Label.Text = Text;
 
+            
             Library:AddToRegistry(Inner, {
                 BackgroundColor3 = 'MainColor';
                 BorderColor3 = 'OutlineColor';
@@ -1156,6 +1157,10 @@ do
                 { BorderColor3 = 'AccentColor' },
                 { BorderColor3 = 'Black' }
             )
+
+            Library:AddToRegistry(Label, {
+                TextColor3 = 'FontColor',
+            });
 
             Library:Create('UIGradient', {
                 Color = ColorSequence.new({
@@ -1719,6 +1724,7 @@ do
         Slider:Display();
         Groupbox:AddBlank(Info.BlankSize or 6);
         Groupbox:Resize();
+        Slider.DisplayFrame = SliderInner
 
         Options[Idx] = Slider;
 
@@ -3092,6 +3098,37 @@ function Library:CreateWindow(...)
                 Library.ColorClipboard = HoveringColorPicker.Value
             elseif Input.KeyCode == Enum.KeyCode.V and Library.ColorClipboard then
                 HoveringColorPicker:SetValueRGB(Library.ColorClipboard)
+            end
+        end
+    end))
+
+    Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+        if Outer.Visible and Input.UserInputType == Enum.UserInputType.Keyboard then
+            local Hovering = nil
+
+            for i, v in next, Options do
+                if v.Type == 'Slider' then
+                    local displayFrame = v.DisplayFrame
+                    local tabFrame = displayFrame and displayFrame:findFirstAncestor('TabFrame')
+
+                    if tabFrame.Visible and Library:IsMouseOverFrame(v.DisplayFrame) then
+                        Hovering = v
+                        break
+                    end
+                end
+            end
+
+            if not Hovering then
+                return
+            end
+
+            local check = InputService:IsKeyDown(Enum.KeyCode.RightShift) or InputService:IsKeyDown(Enum.KeyCode.LeftShift)
+            if Input.KeyCode == Enum.KeyCode.Right and Hovering.Value < Hovering.Max then 
+                Hovering.Value += check and 0.1 or 1
+                Hovering:Display()
+            elseif Input.KeyCode == Enum.KeyCode.Left and Hovering.Value > Hovering.Min then
+                Hovering.Value -= check and 0.1 or 1
+                Hovering:Display()
             end
         end
     end))
