@@ -879,6 +879,7 @@ do -- Misc Tab
         Extra:AddToggle('ChatSpamSymbols', {Text = 'Symbols'})
         Extra:AddSlider('ChatSpamDelay', {Text = 'Delay', Default = 3, Min = 1, Max = 20, Rounding = 0})
         Extra:AddToggle('GameVotekick', {Text = 'Join new game on votekick'})
+        Extra:AddToggle('ServerHop', {Text = 'Force Server Hop'}):AddKeyPicker('ServerHopKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Server Hop', NoUI = false})
         Extra:AddButton('Join New Game', function()
             local jobid = ""
 
@@ -975,6 +976,40 @@ do -- Checks
     else
         Watermark.Icon.Data = readfile("")
     end
+
+    Options.ServerHopKey:OnClick(function()
+        while wait() do
+            if Toggles.ServerHop.Value and Options.ServerHopKey:GetState() then
+                if not Toggles.ServerHop.Value or not Options.ServerHopKey:GetState() then
+                    break
+                end
+
+                Library:Notify("Attempting server hop in 3 seconds!", 3, "move")
+                
+                wait(3)
+
+                if not Toggles.ServerHop.Value or not Options.ServerHopKey:GetState() then
+                    Library:Notify("Cancelling server hop!", 3, "move")
+                    break
+                end
+
+                local jobid = ""
+
+                local Servers = game.HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+    
+                for Index, Value in pairs(Servers.data) do
+                    if Value.playing ~= Value.maxPlayers and Value.playing ~= nil and Value.playing > 20 and Value.ping < 100 then
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, Value.id)
+                        jobid = tostring(Value.id)
+                    end
+                end
+
+                Toggles.ServerHop:SetValue(false)
+
+                Library:Notify("Attempting hop to "..string.sub(jobid, 0, 8).."-XXXX-XXXX-XXXX-XXXXXXXXXXXX.", 5, "move")
+            end
+        end
+    end)
 
     Options.WatermarkIcon:OnChanged(function()
         if isfile("shambles haxx/Configs/icons/"..Options.WatermarkIcon.Value..".png") then
@@ -1218,18 +1253,6 @@ do
         end
     end
 
-    function get_level(player)
-        if player == LocalPlayer and fake_rep_object ~= nil then
-            return fake_rep_object.lastlevel
-        else
-            local entry = game_client.replication_interface.getEntry(player)
-
-            if entry then
-                return entry.lastlevel
-            end
-        end
-    end
-
     function get_alive(player)
         if player == LocalPlayer and fake_rep_object ~= nil then
             return fake_rep_object._alive
@@ -1289,19 +1312,22 @@ do
             if material == "Plastic" or material == "Glass" then 
                 part.Mesh.TextureId = "" 
             end 
-        end  
-    end
-
-    function chams_arm(part, color, trans, reflectance, material)
-        part.Material = material == "ForceField" and "ForceField" or material == "Neon" and "Neon" or material == "Plastic" and "SmoothPlastic" or "Glass"
-        if part:FindFirstChild("Mesh") then
-            part.Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
         end
-        part.Color = color
-        part.Transparency =  1 - trans
-        part.Reflectance = reflectance / 10 
-        if material == "Plastic" or material == "Glass" then 
-            part.Mesh.TextureId = "" 
+        if part:FindFirstChildWhichIsA("Texture") or part:FindFirstChildWhichIsA("Texture") then
+            if material == "ForceField" then
+                part.Transparency = 1
+            else
+                part.Transparency = 1 - trans
+            end
+        end
+        if part:FindFirstChildWhichIsA("SpecialMesh") then
+            part.Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
+            if part.Name == "Head" or part.name == "Torso" then
+                part:FindFirstChildWhichIsA("SpecialMesh").TextureId = "rbxassetid://5614184106"
+            end
+        end
+        if (material == "Plastic" or material == "Glass") and part:FindFirstChild("Mesh") then 
+            part:FindFirstChild("Mesh").TextureId = "" 
         end 
     end
 	
@@ -1639,9 +1665,9 @@ do
                                     
                                     if Toggles[Group.."EspChams"].Value then
                                         for _,q in pairs(Character.Cosmetics:GetChildren()) do
-                                            if q.Name ~= "Head" then
-                                                q:Destroy()
-                                            end
+                                            --if q.Name ~= "Head" then
+                                                chams(q, Options.LocalColorChams.Value, Options.LocalEspChamsTrans.Value / 255, Options.LocalEspChamsReflectance.Value, Options.LocalEspChamsMaterial.Value)
+                                            --end
                                         end
                                         for _,q in pairs(Character:GetChildren()) do
                                             if (q:IsA("BasePart") or q:IsA("MeshPart") or q:IsA("Part")) and q.Transparency ~= 1 then
@@ -1649,7 +1675,7 @@ do
                                             
                                                 for _,a in pairs(q:GetChildren()) do
                                                     if a.Name == "Pant" or a.Name == "Shirt" then
-                                                        a.Texture = "rbxassetid//1"
+                                                        a:Destroy()
                                                     end
                                                 end
                                             elseif q:IsA("Texture") or q:IsA("Decal") then
@@ -1941,14 +1967,14 @@ do
                                     
                                     for _,t in pairs(tdata) do
                                         if not t:IsA("UIListLayout") then
-                                            if t:FindFirstChild("TextPlayer").Text == v.Name then
+                                            if t:FindFirstChild("TextPlayer") and t:FindFirstChild("TextPlayer").Text == v.Name then
                                                 lvl = t.TextRank.Text
                                             end
                                         end
                                     end
 
                                     local torsopos = Camera:WorldToViewportPoint(Character.Torso.Position)
-
+                                    
                                     for _,s in pairs (skeleton_parts) do
                                         if Toggles[Group.."EspSkeleton"].Value and Character:FindFirstChild("Torso") and torsopos then
                                             local line = PLRD[s]
@@ -3121,7 +3147,7 @@ do
                         if Toggles.AArmChams.Value then
                             for _,v1 in pairs(v:GetChildren()) do
                                 if (v1:IsA("BasePart") or v1:IsA("MeshPart")) and v1.Transparency ~= 1 then
-                                    chams_arm(v1, Options.AColorArmChams.Value, Options.AArmChamsTrans.Value / 255, Options.AArmChamsReflectance.Value, Options.AArmChamsMaterial.Value)
+                                    chams(v1, Options.AColorArmChams.Value, Options.AArmChamsTrans.Value / 255, Options.AArmChamsReflectance.Value, Options.AArmChamsMaterial.Value)
                                 end
                             end
                         end
