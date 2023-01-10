@@ -24,6 +24,8 @@ module.exports = {
         const text = interaction.options.getString('text');
         const embed = interaction.options.get('embed') && interaction.options.get('embed').value || false;
 
+        console.log(interaction.member.user.username)
+
         if (embed)
         {
             const embed = new EmbedBuilder()

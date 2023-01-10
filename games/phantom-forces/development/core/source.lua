@@ -702,7 +702,6 @@ do -- Visuals Tab
             TeamEsp:AddToggle('TeamEspLevel', {Text = '[F] Level'}):AddColorPicker('TeamColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
             TeamEsp:AddToggle('TeamEspDistance', {Text = '[F] Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
             TeamEsp:AddDivider()
-            TeamEsp:AddToggle('TeamEspDistance', {Text = 'Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
             TeamEsp:AddToggle('TeamEspOutOfView', {Text = 'Out Of View'}):AddColorPicker('TeamColorOutOfView', {Default = Color3.fromRGB(255, 255, 255), Title = 'Out Of View Color'})
             TeamEsp:AddToggle('TeamEspOutOfViewSine', {Text = 'Pulse'})
             TeamEsp:AddSlider('TeamEspOutOfViewDistance', {Text = 'Distance', Default = 20, Min = 0, Max = 100, Rounding = 1})
@@ -727,7 +726,8 @@ do -- Visuals Tab
             LocalEsp:AddToggle('LocalEspIcon', {Text = 'Weapon Icon'})
             LocalEsp:AddToggle('LocalEspSkeleton', {Text = 'Skeleton'}):AddColorPicker('LocalColorSkeleton', {Default = Color3.fromRGB(255, 255, 255), Title = 'Skeleton Color'})
             LocalEsp:AddDivider()
-            LocalEsp:AddToggle('TLocalEspLevel', {Text = '[F] Level'}):AddColorPicker('LocalColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
+            LocalEsp:AddToggle('LocalEspLevel', {Text = '[F] Level'}):AddColorPicker('LocalColorLevel', {Default = Color3.fromRGB(255, 255, 255), Title = 'Level Color'})
+            TeamEsp:AddToggle('LocalEspDistance', {Text = '[F] Distance'}):AddColorPicker('TeamColorDistance', {Default = Color3.fromRGB(255, 255, 255), Title = 'Distance Color'})
             LocalEsp:AddDivider()
             LocalEsp:AddToggle('LocalEspChams', {Text = 'Chams'}):AddColorPicker('LocalColorChams', {Default = Color3.fromRGB(255, 255, 255), Title = 'Chams Color'})
             LocalEsp:AddSlider('LocalEspChamsTrans', {Text = 'Transparency', Default = 150, Min = 1, Max = 255, Rounding = 0, Compact = true})
@@ -897,7 +897,7 @@ do -- Misc Tab
     end
 end
 
-do -- Settings Tab
+do -- Settings Tab  
     local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu') do
         MenuGroup:AddButton('Unload', function() Library:Unload() end)
         MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind' }) 
@@ -1633,6 +1633,16 @@ do
                                     local Icon = PLRD.Icon
                                     local IconImg = NameToIcon(get_weapon(v))
                                     local yadd = 0
+                                    local lvl = 0
+                                    
+                                    for _,t in pairs(tdata) do
+                                        if not t:IsA("UIListLayout") then
+                                            if t:FindFirstChild("TextPlayer") and t:FindFirstChild("TextPlayer").Text == v.Name then
+                                                lvl = t.TextRank.Text
+                                            end
+                                        end
+                                    end
+
 
                                     local torsopos = Camera:WorldToViewportPoint(Character.Torso.Position)
 
@@ -1976,7 +1986,7 @@ do
                                     local torsopos = Camera:WorldToViewportPoint(Character.Torso.Position)
                                     
                                     for _,s in pairs (skeleton_parts) do
-                                        if Toggles[Group.."EspSkeleton"].Value and Character:FindFirstChild("Torso") and torsopos then
+                                        if Toggles[Group.."EspSkeleton"].Value and Character:FindFirstChild("Torso") and torsopos == Camera:WorldToViewportPoint(Character.Torso.Position) then
                                             local line = PLRD[s]
                                             local pos = Camera:WorldToViewportPoint(Character:FindFirstChild(s).Position)
 
@@ -2327,7 +2337,7 @@ do
                                                 Distance.Color = Options[Group.."ColorDistance"].Value
                                             end
                                         end
-                                        Distance.Position = Vector2.new(Pos.X + Size.X + 3, Pos.Y - 3 + ypos)
+                                        Distance.Position = Vector2.new(Pos.X + Size.X + 3, Pos.Y - 3 + yadd)
                                         if Distance.Center ~= false then
                                             Distance.Center = false
                                         end

@@ -34,7 +34,7 @@ do
         execute("shambles haxx/globals/functions.lua")
         execute("shambles haxx/games/phantom-forces/development/core/source.lua")
         execute("shambles haxx/globals/api.lua")
-    elseif PlaceId == 9993529229 then
+    elseif PlaceId == 301549746 then
         execute("shambles haxx/games/counter blox/source.lua")
         execute("shambles haxx/globals/api.lua")
     else
