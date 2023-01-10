@@ -1224,7 +1224,7 @@ do -- Modules
 						local Velocity = (Vector3.new(RootPart.X, 0, RootPart.Z) - Vector3.new(OldRootPart.X, 0, OldRootPart.Z)) / LastStep
 						local Direction = Vector3.new(Velocity.X / Velocity.magnitude, 0, Velocity.Z / Velocity.magnitude)
 						args[2] = args[2] + Direction * (game.Stats.PerformanceStats.Ping:GetValue() / (math.pow(game.Stats.PerformanceStats.Ping:GetValue(), (1.5))) * (Direction / (Direction / 2)))
-						args[12]= args[12] - 500	
+						args[12] = args[12] - 500	
 					end
 				end)()
 			end
