@@ -103,7 +103,9 @@ local Camera = workspace.Camera
 local UserInputService = game.UserInputService
 local client = getsenv(LocalPlayer.PlayerGui.Client)
 local clock = 0
+local LastStep
 local fps = 0
+local rtar = nil
 local AWParams = RaycastParams.new(); AWParams.FilterType = Enum.RaycastFilterType.Blacklist
 local AWBackParams = RaycastParams.new(); AWBackParams.FilterType = Enum.RaycastFilterType.Whitelist
 
@@ -1054,7 +1056,9 @@ do -- Modules
     end
 
     do -- Rage Bot
-        Library:GiveSignal(RunService.RenderStepped:Connect(function()                
+        Library:GiveSignal(RunService.RenderStepped:Connect(function(step)   
+            LastStep = step
+            rtar = nil             
             for _,v in pairs(Players:GetPlayers()) do  
                 local Now = os.clock()
                 if Toggles.RageEnabled.Value and Options.RageKey:GetState() and v.Team ~= LocalPlayer.Team and isAlive(v) and isAlive() and client.gun.Penetration ~= nil and not v.Character:FindFirstChildOfClass("ForceField") then
@@ -1091,92 +1095,58 @@ do -- Modules
                     -- office, this process is done 4 times, you are able to penetrate up to 4 walls in counter blox
 
                     --for i = 1, #results do
-                        if not vis then
-                            if Toggles.RageForwardTrack.Value then
-                                local vel = character.HumanoidRootPart.Velocity
-                                local amount = Options.RageForwardTrackAmount.Value / 1000
-                                local vect = vel * amount
-                                local poshit = workspace:Raycast(character.Head.Position, vect, AWParams)
-                                if not poshit then
-                                    client.firebullet()
-                                    HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                                else
-                                    client.firebullet()
-                                    HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))    
-                                end
-                            else
+                    if not vis then
+                        if Toggles.RageForwardTrack.Value then
+                            local vel = character.HumanoidRootPart.Velocity
+                            local amount = Options.RageForwardTrackAmount.Value / 1000
+                            local vect = vel * amount
+                            local poshit = workspace:Raycast(character.Head.Position, vect, AWParams)
+                            if not poshit then
                                 client.firebullet()
                                 HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                            else
+                                client.firebullet()
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))    
                             end
-
-                            return;
+                        else
+                            client.firebullet()
+                            HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
                         end
 
-                        local results = {}
+                        rtar = v
 
-                        repeat
-                            local Result = workspace:Raycast(origin, direction, AWParams)
-                            if Result then
-                                table.insert(results, Result)
-                            end
-                        until #results >= 4
-                        
-                        for i = 1, #results do
-                            local Hitpos = results[i].Position
-                            local PartHit = results[i].Instance
-                            local hitmat = PartHit.Material
-                            table.insert(ignorelist, PartHit)
+                        return;
+                    end
+
+                    local results = {}
+
+                    repeat
+                        local Result = workspace:Raycast(origin, direction, AWParams)
+                        if Result then
+                            table.insert(results, Result)
+                        end
+                    until #results >= 4
                     
-                            AWParams.FilterDescendantsInstances = ignorelist
-                    
-                            local mod = 1
-                            mod = (hitmat == Enum.Material.DiamondPlate) and 3 
-                                or ((hitmat == Enum.Material.CorrodedMetal) or (hitmat == Enum.Material.Metal) or (hitmat == Enum.Material.Concrete) or (hitmat == Enum.Material.Brick)) and 2 
-                                or ((hitmat == Enum.Material.Wood) or (hitmat == Enum.Material.WoodPlanks) or (PartHit.Name == "Grate")) and 0.1 
-                                or (PartHit.Name == "nowallbang") and 100 
-                                or (PartHit:FindFirstChild("PartModifier")) and tonumber(PartHit.PartModifier.Value) 
-                                or ((PartHit.Transparency == 1) or (not PartHit.CanCollide) or (PartHit.Name == "Glass") or (PartHit.Name == "Cardboard")) and 0 
-                                or 1
-                            if mod <= 0 then 
-                                if Toggles.RageForwardTrack.Value then
-                                    local vel = character.HumanoidRootPart.Velocity
-                                    local amount = Options.RageForwardTrackAmount.Value
-                                    local vect = vel * amount
-                                    local poshit = workspace:Raycast(character.Head.Position, vect, AWParams)
-                                    if poshit then
-                                        client.firebullet()
-                                        HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))
-                                    else
-                                        client.firebullet()
-                                        HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                                    end
-                                else
-                                    client.firebullet()
-                                    HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                                end
-                                return;
-                            end
-                            local maxpen = (penetrationPower - maximum_penetration) / mod
-                            local reverse_direction = direction.Unit * maxpen
-
-                            AWBackParams.FilterDescendantsInstances = {PartHit}
-
-                            local end_result = workspace:Raycast(Hitpos + reverse_direction, reverse_direction * -2, AWBackParams)
-                            if not end_result then 
-                                return 
-                            end
-                            
-                            local pen_distance = (end_result.Position - Hitpos).Magnitude * mod 
-                            maximum_penetration += pen_distance
-                            DamageModifier = 1 - (maximum_penetration / penetrationPower)
-                    
-                            if (maximum_penetration >= penetrationPower or DamageModifier <= 0) then
-                                return
-                            end
-
-                            --[[if Toggles.RageForwardTrack.Value then
+                    for i = 1, #results do
+                        local Hitpos = results[i].Position
+                        local PartHit = results[i].Instance
+                        local hitmat = PartHit.Material
+                        table.insert(ignorelist, PartHit)
+                
+                        AWParams.FilterDescendantsInstances = ignorelist
+                
+                        local mod = 1
+                        mod = (hitmat == Enum.Material.DiamondPlate) and 3 
+                            or ((hitmat == Enum.Material.CorrodedMetal) or (hitmat == Enum.Material.Metal) or (hitmat == Enum.Material.Concrete) or (hitmat == Enum.Material.Brick)) and 2 
+                            or ((hitmat == Enum.Material.Wood) or (hitmat == Enum.Material.WoodPlanks) or (PartHit.Name == "Grate")) and 0.1 
+                            or (PartHit.Name == "nowallbang") and 100 
+                            or (PartHit:FindFirstChild("PartModifier")) and tonumber(PartHit.PartModifier.Value) 
+                            or ((PartHit.Transparency == 1) or (not PartHit.CanCollide) or (PartHit.Name == "Glass") or (PartHit.Name == "Cardboard")) and 0 
+                            or 1
+                        if mod <= 0 then 
+                            if Toggles.RageForwardTrack.Value then
                                 local vel = character.HumanoidRootPart.Velocity
-                                local amount = Options.RageForwardTrackAmount.Value / 1000
+                                local amount = Options.RageForwardTrackAmount.Value
                                 local vect = vel * amount
                                 local poshit = workspace:Raycast(character.Head.Position, vect, AWParams)
                                 if poshit then
@@ -1186,14 +1156,80 @@ do -- Modules
                                     client.firebullet()
                                     HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
                                 end
-                            else]]
-                                --client.firebullet()
-                                --HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                            --end
+                            else
+                                client.firebullet()
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                            end
+
+                            rtar = v
+
+                            return;
                         end
+                        local maxpen = (penetrationPower - maximum_penetration) / mod
+                        local reverse_direction = direction.Unit * maxpen
+
+                        AWBackParams.FilterDescendantsInstances = {PartHit}
+
+                        local end_result = workspace:Raycast(Hitpos + reverse_direction, reverse_direction * -2, AWBackParams)
+                        if not end_result then 
+                            return 
+                        end
+                        
+                        local pen_distance = (end_result.Position - Hitpos).Magnitude * mod 
+                        maximum_penetration += pen_distance
+                        DamageModifier = 1 - (maximum_penetration / penetrationPower)
+                
+                        if (maximum_penetration >= penetrationPower or DamageModifier <= 0) then
+                            return
+                        end
+
+                        --[[if Toggles.RageForwardTrack.Value then
+                            local vel = character.HumanoidRootPart.Velocity
+                            local amount = Options.RageForwardTrackAmount.Value / 1000
+                            local vect = vel * amount
+                            local poshit = workspace:Raycast(character.Head.Position, vect, AWParams)
+                            if poshit then
+                                client.firebullet()
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, poshit.Position, 2)))
+                            else
+                                client.firebullet()
+                                HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                            end
+                        else]]
+                            --client.firebullet()
+                            --HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                        --end
                     end
                 end
             end
         end))
     end
+
+    local mt = getrawmetatable(game) 
+	local oldNamecall = mt.__namecall 
+	local oldIndex = mt.__index 
+	local oldNewIndex = mt.__newindex 
+	setreadonly(mt,false) 
+	mt.__namecall = function(self, ...)
+		local method = tostring(getnamecallmethod())
+		local args = {...} 
+
+        if method == "FireServer" and self.Name == "HitPart" then 
+			if rtar ~= nil then
+				-- Stolen pred from J's dms. <3
+				coroutine.wrap(function()
+					if Players:GetPlayerFromCharacter(args[1].Parent) or args[1] == rtar then 
+						local RootPart = rtar.Parent.HumanoidRootPart.Position
+						local OldRootPart = rtar.Parent.HumanoidRootPart.OldPosition.Value
+						local Velocity = (Vector3.new(RootPart.X, 0, RootPart.Z) - Vector3.new(OldRootPart.X, 0, OldRootPart.Z)) / LastStep
+						local Direction = Vector3.new(Velocity.X / Velocity.magnitude, 0, Velocity.Z / Velocity.magnitude)
+						args[2] = args[2] + Direction * (game.Stats.PerformanceStats.Ping:GetValue() / (math.pow(game.Stats.PerformanceStats.Ping:GetValue(), (1.5))) * (Direction / (Direction / 2)))
+						args[12]= args[12] - 500	
+					end
+				end)()
+			end
+		end
+
+        return oldNamecall(self, unpack(args)) 
+	end
 end
