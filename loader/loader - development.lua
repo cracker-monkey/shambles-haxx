@@ -30,7 +30,6 @@ do
     execute("shambles haxx/globals/information.lua")
 
     if PlaceId == 299659045 or PlaceId == 292439477 then
-        --getgenv().game_name = "phantom forces"
         execute("shambles haxx/globals/functions.lua")
         execute("shambles haxx/games/phantom-forces/development/core/source.lua")
         execute("shambles haxx/globals/api.lua")

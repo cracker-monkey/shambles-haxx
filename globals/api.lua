@@ -39,12 +39,6 @@ if username == "developer" then
     end 
 
     getgenv().cheat = {
-        print = function(text, color)
-            printconsole(text, color.R * 255, color.B * 255, color.G * 255) 
-        end,
-        notify = function(text, time, type, warning)
-            Library:Notify(text, time, type, warning)
-        end,
         username = username,
         uid = uid,
         library = Library,
@@ -55,6 +49,14 @@ if username == "developer" then
     }
 
     getgenv().websockets = {}
+
+    function cheat:print(text, color)
+        printconsole(text, color.R * 255, color.B * 255, color.G * 255) 
+    end
+
+    function cheat:notify(text, time, type, warning)
+        Library:Notify(text, time, type, warning)
+    end
 
     function cheat.scripts:Run(file)
         if isfile("shambles haxx/Configs/Phantom Forces/lua/" ..tostring(file)) then

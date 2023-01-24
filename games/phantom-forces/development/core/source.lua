@@ -142,6 +142,21 @@ local Crosshair = {
     Right = Ut.New({type = "Line"}),
     Top = Ut.New({type = "Line"}),
     Bottom = Ut.New({type = "Line"}),
+
+    LeftD = 0,
+    RightD = 0,
+    TopD = 0,
+    BottomD = 0,
+
+    LeftP = Vector2.new,
+    RightP = Vector2.new,
+    TopP = Vector2.new,
+    BottomP = Vector2.new,
+
+    LeftCA = 0,
+    RightCA = 0,
+    TopCA = 0,
+    BottomCA = 0,
 }
 
 local FCS = {
@@ -197,6 +212,7 @@ local CrosshairRightBorder      = Crosshair.RightBorder
 local CrosshairTopBorder        = Crosshair.TopBorder
 local CrosshairBottomBorder     = Crosshair.BottomBorder
 local organizedPlayers          = {}
+local weapon                    = nil
 local rage                      = {target = nil, lastf = 0}
 local currentAngle              = 0
 local fps                       = 0
@@ -651,7 +667,8 @@ do -- Rage Tab
         AntiAim:AddToggle('AntiEnabled', {Text = 'Enabled'}):AddKeyPicker('AntiKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Anti Aim', NoUI = false})
         AntiAim:AddDropdown('AntiPitch', {Values = { "Off", "Up", "Down", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Pitch'})
         AntiAim:AddDropdown('AntiYaw', {Values = { "Off", "Backwards", "Spin", "Random", "Sine Wave", "Custom" }, Default = 1, Multi = false, Text = 'Yaw'})
-        AntiAim:AddSlider('AntiSineWave', {Text = 'Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
+        AntiAim:AddSlider('AntiPitchSineWave', {Text = 'Pitch Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
+        AntiAim:AddSlider('AntiYawSineWave', {Text = 'Yaw Sine Wave Speed', Default = 4, Min = 0, Max = 20, Rounding = 0})
         AntiAim:AddSlider('AntiCustomYaw', {Text = 'Custom Yaw', Default = 0, Min = 0, Max = 360, Rounding = 0})
         AntiAim:AddSlider('AntiCustomPitch', {Text = 'Custom Yaw', Default = 0, Min = -4, Max = 4, Rounding = 0})
         AntiAim:AddSlider('AntiSpinRate', {Text = 'Spin Rate', Default = 0, Min = -100, Max = 100, Rounding = 0})
@@ -755,27 +772,60 @@ do -- Visuals Tab
         WeaponEsp:AddToggle('DroppedIcon', {Text = 'Weapon Icon'})
     end
 
-    local InterfaceBox = Tabs.Visuals:AddRightTabbox() do
-        local CursorEsp = InterfaceBox:AddTab('Cursor') do
-            CursorEsp:AddToggle('CursorEnabled', {Text = 'Enabled'}):AddColorPicker('ColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('ColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
-            CursorEsp:AddSlider('CursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
-            CursorEsp:AddSlider('CursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
-            CursorEsp:AddSlider('CursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
-            CursorEsp:AddToggle('CursorBarrel', {Text = 'Follow Barrel'})
-            CursorEsp:AddToggle('CursorBorder', {Text = 'Border'})
-            CursorEsp:AddToggle('CursorSpin', {Text = 'Spin'})
-            CursorEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
+    local FovEsp = Tabs.Visuals:AddRightGroupbox('Field Of View') do
+        FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
+        FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
+        FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
+    end
+
+    local CrosshairBox = Tabs.Visuals:AddRightTabbox() do
+        local LeftCrosshair = CrosshairBox:AddTab('Left') do
+            LeftCrosshair:AddToggle('LCursorEnabled', {Text = 'Enabled'}):AddColorPicker('LColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('LColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            LeftCrosshair:AddSlider('LCursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            LeftCrosshair:AddSlider('LCursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            LeftCrosshair:AddSlider('LCursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            LeftCrosshair:AddToggle('LCursorBarrel', {Text = 'Follow Barrel'})
+            LeftCrosshair:AddToggle('LCursorBorder', {Text = 'Border'})
+            LeftCrosshair:AddToggle('LCursorDynamic', {Text = 'Dynamic'})
         end
 
-        local FovEsp = InterfaceBox:AddTab('Field Of View') do
-            FovEsp:AddToggle('FovAimAssist', {Text = 'Aim Assist'}):AddColorPicker('ColorFovAimAssist', {Default = Color3.fromRGB(255, 255, 255), Title = 'Aim Assist Color'})
-            FovEsp:AddToggle('FovSilent', {Text = 'Silent Aim'}):AddColorPicker('ColorSilent', {Default = Color3.fromRGB(255, 255, 255), Title = 'Silent Color'})
-            FovEsp:AddToggle('FovBarrel', {Text = 'Follow Barrel'})
+        local RightCrosshair = CrosshairBox:AddTab('Right') do
+            RightCrosshair:AddToggle('RCursorEnabled', {Text = 'Enabled'}):AddColorPicker('RColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('RColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            RightCrosshair:AddSlider('RCursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            RightCrosshair:AddSlider('RCursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            RightCrosshair:AddSlider('RCursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            RightCrosshair:AddToggle('RCursorBarrel', {Text = 'Follow Barrel'})
+            RightCrosshair:AddToggle('RCursorBorder', {Text = 'Border'})
+            RightCrosshair:AddToggle('RCursorDynamic', {Text = 'Dynamic'})
+        end
+        
+        local TopCrosshair = CrosshairBox:AddTab('Top') do
+            TopCrosshair:AddToggle('TCursorEnabled', {Text = 'Enabled'}):AddColorPicker('TColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('TColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            TopCrosshair:AddSlider('TCursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            TopCrosshair:AddSlider('TCursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            TopCrosshair:AddSlider('TCursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            TopCrosshair:AddToggle('TCursorBarrel', {Text = 'Follow Barrel'})
+            TopCrosshair:AddToggle('TCursorBorder', {Text = 'Border'})
+            TopCrosshair:AddToggle('TCursorDynamic', {Text = 'Dynamic'})
+        end
+
+        local BottomCrosshair = CrosshairBox:AddTab('Bottom') do
+            BottomCrosshair:AddToggle('BCursorEnabled', {Text = 'Enabled'}):AddColorPicker('BColorCursor', {Default = Color3.fromRGB(255, 255, 0), Title = 'Cursor Color'}):AddColorPicker('BColorCursorBorder', {Default = Color3.fromRGB(0, 0, 0), Title = 'Cursor Border Color'})
+            BottomCrosshair:AddSlider('BCursorSize', {Text = 'Size', Default = 13, Min = 1, Max = 100, Rounding = 0})
+            BottomCrosshair:AddSlider('BCursorThickness', {Text = 'Thickness', Default = 2, Min = 1, Max = 50, Rounding = 0})
+            BottomCrosshair:AddSlider('BCursorGap', {Text = 'Gap', Default = 5, Min = 1, Max = 100, Rounding = 0})
+            BottomCrosshair:AddToggle('BCursorBarrel', {Text = 'Follow Barrel'})
+            BottomCrosshair:AddToggle('BCursorBorder', {Text = 'Border'})
+            BottomCrosshair:AddToggle('BCursorDynamic', {Text = 'Dynamic'})
         end
     end
 
     local OtherEspBox = Tabs.Visuals:AddRightTabbox() do
         local LocalEsp = OtherEspBox:AddTab('Local Player') do
+            LocalEsp:AddToggle('CursorSpin', {Text = 'Cursor Spin'})
+            LocalEsp:AddSlider('CursorSpinSpeed', {Text = 'Spin Speed', Default = 5, Min = 1, Max = 50, Rounding = 0})
+            LocalEsp:AddToggle('FieldOfView', {Text = 'Field Of View'})
+            LocalEsp:AddSlider('FieldOfViewAmount', {Text = 'Amount', Default = 90, Min = 20, Max = 120, Rounding = 0})
             LocalEsp:AddToggle('ViewModel', {Text = 'Viewmodel Changer'})
             LocalEsp:AddSlider('ViewModelX', {Text = 'X Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
             LocalEsp:AddSlider('ViewModelY', {Text = 'Y Position', Default = 0, Min = -10, Max = 10, Rounding = 1})
@@ -1294,12 +1344,18 @@ do
     end
 
     function calculate_player_bounding_box(character)
-        local Pos = Camera:WorldToViewportPoint(character.Torso.Position)
-        local CSize = (Camera:WorldToViewportPoint(character.Torso.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(character.Torso.Position + Vector3.new(0, 2.6, 0)).Y) / 2
-        local BoxSize = Vector2.new(math.floor(CSize * 1.2), math.floor(CSize * 2))
-        local BoxPos = Vector2.new(math.floor(Pos.X - CSize * 1 / 2), math.floor(Pos.Y - CSize * 1.6 / 2))
-
-        return BoxPos, BoxSize
+        local vTop = character.Torso.Position + (character.Torso.CFrame.UpVector * 1.8) + Camera.CFrame.UpVector
+        local vBottom = character.Torso.Position - (character.Torso.CFrame.UpVector * 2.5) - Camera.CFrame.UpVector
+    
+        local top, topIsRendered = Camera:WorldToViewportPoint(vTop)
+        local bottom, bottomIsRendered = Camera:WorldToViewportPoint(vBottom)
+    
+        local _width = math.max(math.floor(math.abs(top.x - bottom.x)), 3)
+        local _height = math.max(math.floor(math.max(math.abs(bottom.y - top.y), _width / 2)), 3)
+        local boxSize = Vector2.new(math.floor(math.max(_height / 1.5, _width)), _height)
+        local boxPosition = Vector2.new(math.floor(top.x * 0.5 + bottom.x * 0.5 - boxSize.x * 0.5), math.floor(math.min(top.y, bottom.y)))
+    
+        return boxPosition, boxSize
     end
 
     function chams(part, color, trans, reflectance, material)
@@ -1539,30 +1595,30 @@ do
                     if not table.find(Priority, v.Name) and Toggles.PriorityOnly.Value then continue end
                     if Toggles.RageEnabled.Value and Options.RageKey:GetState() and get_character(v) and get_alive(v) and  v.Team ~= LocalPlayer.Team and v ~= LocalPlayer and game_client.LocalPlayer.isAlive(v) and curgun <= 2 then
                         if Toggles.RageFirePos.Value then
-                            RPos = rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth)
+                            RPos = rage:scanplayer(BarrelPos, get_character(v)[Options.RageHitscan.Value].Position, Options.RageFirePosAmount.Value, weapon._weaponData.penetrationdepth)
                         else
                             RPos = BarrelPos
                         end
-                        local traj = game_client.physics.trajectory(RPos, game_client.PBS.bulletAcceleration, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed)                   
+                        local traj = game_client.physics.trajectory(RPos, game_client.PBS.bulletAcceleration, get_character(v)[Options.RageHitscan.Value].Position, weapon._weaponData.bulletspeed)                   
                         
                         tableinfo.firepos = RPos
 
-                        if game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount == 0 then
-                            rage:reload(game_client.WCI:getController()._activeWeaponRegistry[curgun])
+                        if weapon._magCount == 0 then
+                            rage:reload(weapon)
                         end
                         
-                        if rage:bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.penetrationdepth) and 
-                        rage:fireratecheck(type(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) == "table" and 
-                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate[1] or 
-                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firerate) and 
-                        game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount ~= 0 then
+                        if rage:bulletcheck(RPos, get_character(v)[Options.RageHitscan.Value].Position, weapon._weaponData.penetrationdepth) and 
+                        rage:fireratecheck(type(weapon._weaponData.firerate) == "table" and 
+                        weapon._weaponData.firerate[1] or 
+                        weapon._weaponData.firerate) and 
+                        weapon._magCount ~= 0 then
                             debug.setupvalue(game_client.firearm_object.fireRound, 10, debug.getupvalue(game_client.firearm_object.fireRound, 10) + 1)
                             tableinfo.bullets[1] = {
-                                traj.Unit * game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.bulletspeed, 
+                                traj.Unit * weapon._weaponData.bulletspeed, 
                                 debug.getupvalue(game_client.firearm_object.fireRound, 10),
                             }
                             
-                            game_client.WCI:getController()._activeWeaponRegistry[curgun]._magCount -= 1
+                            weapon._magCount -= 1
 
                             rage.target = v
 
@@ -2572,7 +2628,16 @@ do
         do -- Visuals
             Library:GiveSignal(rs.RenderStepped:Connect(function(step)
                 fps = math.floor(1/step)
+
                 currentAngle = currentAngle + math.rad((Options.CursorSpinSpeed.Value * 10) * step);
+
+                if game_client.LocalPlayer.isAlive() then
+                    weapon = game_client.WCI:getController()._activeWeaponRegistry[curgun]
+                end
+
+                if game_client.LocalPlayer.isAlive() and Toggles.FieldOfView.Value then
+                    game_client.character_interface.getCharacterObject().unaimedfov = Options.FieldOfViewAmount.Value
+                end
 
                 if alive and not game_client.LocalPlayer.isAlive() and t + 1 < tick() then
                     game_client.character_interface.spawn()
@@ -2583,8 +2648,8 @@ do
                     curgun = game_client.WCI:getController()._activeWeaponIndex
                 end
 
-                if Toggles.FovBarrel.Value and game_client.LocalPlayer.isAlive() and game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart ~= nil and game_client.WCI:getController()._activeWeaponRegistry[curgun] then
-                    local hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                if Toggles.FovBarrel.Value and game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil and weapon then
+                    local hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon._barrelPart.Position, weapon._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
                     local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
 
                     FovPos = Vector2.new(nigga.x, nigga.y)
@@ -2592,236 +2657,331 @@ do
                     FovPos = ScreenSize / 2
                 end
 
-                if Toggles.CursorBarrel.Value and game_client.LocalPlayer.isAlive() and game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart ~= nil and game_client.WCI:getController()._activeWeaponRegistry[curgun] then
-                    local hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position, game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
-                    local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
-
-                    CrosshairPos = Vector2.new(nigga.x, nigga.y)
-                else
-                    CrosshairPos = ScreenSize / 2
+                if game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil then
+                    BarrelPos = weapon._barrelPart.Position
                 end
 
-                if game_client.LocalPlayer.isAlive() and game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart ~= nil then
-                    BarrelPos = game_client.WCI:getController()._activeWeaponRegistry[curgun]._barrelPart.Position
-                end
+                if Toggles.LCursorEnabled.Value and game_client.LocalPlayer.isAlive() then 
+                    if Toggles.LCursorDynamic.Value then
+                        Crosshair.LeftD = Options.LCursorGap.Value + math.round(Options.LCursorSize.Value * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) * (-1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1) or 0
+                    else
+                        Crosshair.LeftD = Options.LCursorGap.Value 
+                    end
 
-                if Toggles.CursorEnabled.Value and game_client.LocalPlayer.isAlive() then
-                    if CrosshairLeft.Color ~= Options.ColorCursor.Value then
-                        CrosshairLeft.Color = Options.ColorCursor.Value
+                    if CrosshairLeft.Color ~= Options.LColorCursor.Value then
+                        CrosshairLeft.Color = Options.LColorCursor.Value
                     end
             
                     if CrosshairLeft.Visible ~= true then
                         CrosshairLeft.Visible = true
                     end
-            
-                    if CrosshairLeft.Thickness ~= Options.CursorThickness.Value then
-                        CrosshairLeft.Thickness = Options.CursorThickness.Value
+
+                    if CrosshairLeftBorder.Visible ~= Toggles.LCursorBorder.Value then
+                        CrosshairLeftBorder.Visible = Toggles.LCursorBorder.Value
                     end
             
-                    if CrosshairLeftBorder.Color ~= Options.ColorCursorBorder.Value then
-                        CrosshairLeftBorder.Color = Options.ColorCursorBorder.Value
+                    if CrosshairLeft.Thickness ~= Options.LCursorThickness.Value then
+                        CrosshairLeft.Thickness = Options.LCursorThickness.Value
                     end
             
-                    if CrosshairLeftBorder.Thickness ~= Options.CursorThickness.Value + 2 then
-                        CrosshairLeftBorder.Thickness = Options.CursorThickness.Value + 2
+                    if CrosshairLeftBorder.Color ~= Options.LColorCursorBorder.Value then
+                        CrosshairLeftBorder.Color = Options.LColorCursorBorder.Value
                     end
             
-                    --
+                    if CrosshairLeftBorder.Thickness ~= Options.LCursorThickness.Value + 2 then
+                        CrosshairLeftBorder.Thickness = Options.LCursorThickness.Value + 2
+                    end
+
+                    if Toggles.LCursorBarrel.Value and game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil and weapon then
+                        local hit, hitpos, normal
+
+                        if game_client.character_interface.getCharacterObject()._zoommodspring._p1 == 0 then
+                            hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon._barrelPart.Position, weapon._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        else
+                           hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon:getWeaponPart(weapon:getWeaponData().sight).Position, weapon:getWeaponPart(weapon:getWeaponData().sight).Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        end
+                        local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
+
+                        Crosshair.LeftP = Vector2.new(nigga.x, nigga.y)
+                    else
+                        Crosshair.LeftP = ScreenSize / 2
+                    end
+
+                    if Toggles.CursorSpin.Value then
+                        CrosshairLeft.From = Crosshair.LeftP + (Vector2.new(math.cos(currentAngle), math.sin(currentAngle)) * Crosshair.LeftD)
+                    
+                        CrosshairLeft.To = CrosshairLeft.From + (Vector2.new(math.cos(currentAngle), math.sin(currentAngle)) * Options.LCursorSize.Value)
             
-                    if CrosshairRight.Color ~= Options.ColorCursor.Value then
-                        CrosshairRight.Color = Options.ColorCursor.Value
+                        CrosshairLeftBorder.From = Crosshair.LeftP + (Vector2.new(math.cos(currentAngle - 0.01), math.sin(currentAngle - 0.01)) * (Crosshair.LeftD - 1))
+                    
+                        CrosshairLeftBorder.To = CrosshairLeftBorder.From + (Vector2.new(math.cos(currentAngle - 0.01), math.sin(currentAngle - 0.01)) * (Options.LCursorSize.Value + 2))
+                    else
+                        if CrosshairLeft.From ~= Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD - Options.LCursorSize.Value, Crosshair.LeftP.y) then
+                            CrosshairLeft.From = Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD - Options.LCursorSize.Value, Crosshair.LeftP.y)
+                        end
+                    
+                        if CrosshairLeft.To ~= Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD, Crosshair.LeftP.y) then
+                            CrosshairLeft.To = Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD, Crosshair.LeftP.y)
+                        end
+                    
+                        if CrosshairLeftBorder.From ~= Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD - Options.LCursorSize.Value - 1, Crosshair.LeftP.y) then
+                            CrosshairLeftBorder.From = Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD - Options.LCursorSize.Value - 1, Crosshair.LeftP.y)
+                        end
+                    
+                        if CrosshairLeftBorder.To ~= Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD + 1, Crosshair.LeftP.y) then
+                            CrosshairLeftBorder.To = Vector2.new(Crosshair.LeftP.x - Crosshair.LeftD + 1, Crosshair.LeftP.y)
+                        end
+                    end
+                else
+                    if CrosshairLeft.Visible ~= false then
+                        CrosshairLeft.Visible = false
+                    end
+
+                    if CrosshairLeftBorder.Visible ~= false then
+                        CrosshairLeftBorder.Visible = false
+                    end
+                end
+
+                if Toggles.RCursorEnabled.Value and game_client.LocalPlayer.isAlive() then 
+                    if Toggles.RCursorDynamic.Value then
+                        Crosshair.RightD = Options.RCursorGap.Value + math.round(Options.RCursorSize.Value * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) * (-1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1) or 0
+                    else
+                        Crosshair.RightD = Options.RCursorGap.Value 
+                    end
+
+                    if CrosshairRight.Color ~= Options.RColorCursor.Value then
+                        CrosshairRight.Color = Options.RColorCursor.Value
                     end
             
                     if CrosshairRight.Visible ~= true then
                         CrosshairRight.Visible = true
                     end
-            
-                    if CrosshairRight.Thickness ~= Options.CursorThickness.Value then
-                        CrosshairRight.Thickness = Options.CursorThickness.Value
+
+                    if CrosshairRightBorder.Visible ~= Toggles.RCursorBorder.Value then
+                        CrosshairRightBorder.Visible = Toggles.RCursorBorder.Value
                     end
             
-                    if CrosshairRightBorder.Color ~= Options.ColorCursorBorder.Value then
-                        CrosshairRightBorder.Color = Options.ColorCursorBorder.Value
+                    if CrosshairRight.Thickness ~= Options.RCursorThickness.Value then
+                        CrosshairRight.Thickness = Options.RCursorThickness.Value
                     end
             
-                    if CrosshairRightBorder.Thickness ~= Options.CursorThickness.Value + 2 then
-                        CrosshairRightBorder.Thickness = Options.CursorThickness.Value + 2
+                    if CrosshairRightBorder.Color ~= Options.RColorCursorBorder.Value then
+                        CrosshairRightBorder.Color = Options.RColorCursorBorder.Value
                     end
+            
+                    if CrosshairRightBorder.Thickness ~= Options.RCursorThickness.Value + 2 then
+                        CrosshairRightBorder.Thickness = Options.RCursorThickness.Value + 2
+                    end
+
+                    if Toggles.RCursorBarrel.Value and game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil and weapon then
+                        local hit, hitpos, normal
+
+                        if game_client.character_interface.getCharacterObject()._zoommodspring._p1 == 0 then
+                            hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon._barrelPart.Position, weapon._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        else
+                           hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon:getWeaponPart(weapon:getWeaponData().sight).Position, weapon:getWeaponPart(weapon:getWeaponData().sight).Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        end
+                        local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
+    
+                        Crosshair.RightP = Vector2.new(nigga.x, nigga.y)
+                    else
+                        Crosshair.RightP = ScreenSize / 2
+                    end
+
+                    if Toggles.CursorSpin.Value then
+                        CrosshairRight.From = Crosshair.RightP + (Vector2.new(math.cos(currentAngle + math.pi / 2), math.sin(currentAngle + math.pi / 2)) * Crosshair.RightD)
                     
-                    --
+                        CrosshairRight.To = CrosshairRight.From + (Vector2.new(math.cos(currentAngle + math.pi / 2), math.sin(currentAngle + math.pi / 2)) * Options.RCursorSize.Value)
             
-                    if CrosshairTop.Color ~= Options.ColorCursor.Value then
-                        CrosshairTop.Color = Options.ColorCursor.Value
+                        CrosshairRightBorder.From = Crosshair.RightP + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2), math.sin(((currentAngle) - 0.01) + math.pi / 2)) * (Crosshair.RightD - 1))
+                    
+                        CrosshairRightBorder.To = CrosshairRightBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2), math.sin(((currentAngle) - 0.01) + math.pi / 2)) * (Options.RCursorSize.Value + 2))  
+                    else
+                        if CrosshairRight.From ~= Vector2.new(Crosshair.RightP.x + Crosshair.RightD + Options.RCursorSize.Value + 1, Crosshair.RightP.y) then
+                            CrosshairRight.From = Vector2.new(Crosshair.RightP.x + Crosshair.RightD + Options.RCursorSize.Value + 1, Crosshair.RightP.y)
+                        end
+                    
+                        if CrosshairRight.To ~= Vector2.new(Crosshair.RightP.x + Crosshair.RightD + 1, Crosshair.RightP.y) then
+                            CrosshairRight.To = Vector2.new(Crosshair.RightP.x + Crosshair.RightD + 1, Crosshair.RightP.y)
+                        end
+                    
+                        if CrosshairRightBorder.From ~= Vector2.new(Crosshair.RightP.x + Crosshair.RightD + Options.RCursorSize.Value + 2, Crosshair.RightP.y) then
+                            CrosshairRightBorder.From = Vector2.new(Crosshair.RightP.x + Crosshair.RightD + Options.RCursorSize.Value + 2, Crosshair.RightP.y)
+                        end
+                    
+                        if CrosshairRightBorder.To ~= Vector2.new(Crosshair.RightP.x + Crosshair.RightD, Crosshair.RightP.y) then
+                            CrosshairRightBorder.To = Vector2.new(Crosshair.RightP.x + Crosshair.RightD, Crosshair.RightP.y)
+                        end
+                    end
+                else
+                    if CrosshairRight.Visible ~= false then
+                        CrosshairRight.Visible = false
+                    end
+
+                    if CrosshairRightBorder.Visible ~= false then
+                        CrosshairRightBorder.Visible = false
+                    end
+                end
+
+                if Toggles.TCursorEnabled.Value and game_client.LocalPlayer.isAlive() then 
+                    if Toggles.TCursorDynamic.Value then
+                        Crosshair.TopD = Options.TCursorGap.Value + math.round(Options.TCursorSize.Value * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) * (-1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1) or 0
+                    else
+                        Crosshair.TopD = Options.TCursorGap.Value 
+                    end
+
+                    if CrosshairTop.Color ~= Options.TColorCursor.Value then
+                        CrosshairTop.Color = Options.TColorCursor.Value
                     end
             
                     if CrosshairTop.Visible ~= true then
                         CrosshairTop.Visible = true
                     end
-            
-                    if CrosshairTop.Thickness ~= Options.CursorThickness.Value then
-                        CrosshairTop.Thickness = Options.CursorThickness.Value
+
+                    if CrosshairTopBorder.Visible ~= Toggles.TCursorBorder.Value then
+                        CrosshairTopBorder.Visible = Toggles.TCursorBorder.Value
                     end
             
-                    if CrosshairTopBorder.Color ~= Options.ColorCursorBorder.Value then
-                        CrosshairTopBorder.Color = Options.ColorCursorBorder.Value
+                    if CrosshairTop.Thickness ~= Options.TCursorThickness.Value then
+                        CrosshairTop.Thickness = Options.TCursorThickness.Value
                     end
             
-                    if CrosshairTopBorder.Thickness ~= Options.CursorThickness.Value + 2 then
-                        CrosshairTopBorder.Thickness = Options.CursorThickness.Value + 2
+                    if CrosshairTopBorder.Color ~= Options.TColorCursorBorder.Value then
+                        CrosshairTopBorder.Color = Options.TColorCursorBorder.Value
                     end
             
-                    --
+                    if CrosshairTopBorder.Thickness ~= Options.TCursorThickness.Value + 2 then
+                        CrosshairTopBorder.Thickness = Options.TCursorThickness.Value + 2
+                    end
+
+                    if Toggles.TCursorBarrel.Value and game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil and weapon then
+                        local hit, hitpos, normal
+
+                        if game_client.character_interface.getCharacterObject()._zoommodspring._p1 == 0 then
+                            hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon._barrelPart.Position, weapon._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        else
+                           hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon:getWeaponPart(weapon:getWeaponData().sight).Position, weapon:getWeaponPart(weapon:getWeaponData().sight).Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        end
+                        local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
+    
+                        Crosshair.TopP = Vector2.new(nigga.x, nigga.y)
+                    else
+                        Crosshair.TopP = ScreenSize / 2
+                    end
+
+                    if Toggles.CursorSpin.Value then
+                        CrosshairTop.From = Crosshair.TopP + (Vector2.new(math.cos(currentAngle + math.pi), math.sin(currentAngle + math.pi)) * Crosshair.TopD)
+                    
+                        CrosshairTop.To = CrosshairTop.From + (Vector2.new(math.cos(currentAngle + math.pi), math.sin(currentAngle + math.pi)) * Options.TCursorSize.Value)
             
-                    if CrosshairBottom.Color ~= Options.ColorCursor.Value then
-                        CrosshairBottom.Color = Options.ColorCursor.Value
+                        CrosshairTopBorder.From = Crosshair.TopP + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi), math.sin(((currentAngle) - 0.01) + math.pi)) * (Crosshair.TopD - 1))
+                    
+                        CrosshairTopBorder.To = CrosshairTopBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi), math.sin(((currentAngle) - 0.01) + math.pi)) * (Options.TCursorSize.Value + 2))
+                    else
+                        if CrosshairTop.From ~= Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD - Options.TCursorSize.Value) then
+                            CrosshairTop.From = Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD - Options.TCursorSize.Value)
+                        end
+                    
+                        if CrosshairTop.To ~= Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD) then
+                            CrosshairTop.To = Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD)
+                        end
+                    
+                        if CrosshairTopBorder.From ~= Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD - Options.TCursorSize.Value - 1) then
+                            CrosshairTopBorder.From = Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD - Options.TCursorSize.Value - 1)
+                        end
+                    
+                        if CrosshairTopBorder.To ~= Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD + 1) then
+                            CrosshairTopBorder.To = Vector2.new(Crosshair.TopP.x, Crosshair.TopP.y - Crosshair.TopD + 1)
+                        end
+                    end
+                else
+                    if CrosshairTop.Visible ~= false then
+                        CrosshairTop.Visible = false
+                    end
+
+                    if CrosshairTopBorder.Visible ~= false then
+                        CrosshairTopBorder.Visible = false
+                    end
+                end
+
+                if Toggles.BCursorEnabled.Value and game_client.LocalPlayer.isAlive() then 
+                    if Toggles.BCursorDynamic.Value then
+                        Crosshair.BottomD = Options.BCursorGap.Value + math.round(Options.BCursorSize.Value * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) * (-1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1) or 0
+                    else
+                        Crosshair.BottomD = Options.BCursorGap.Value 
+                    end
+
+                    if CrosshairBottom.Color ~= Options.BColorCursor.Value then
+                        CrosshairBottom.Color = Options.BColorCursor.Value
                     end
             
                     if CrosshairBottom.Visible ~= true then
                         CrosshairBottom.Visible = true
                     end
-            
-                    if CrosshairBottom.Thickness ~= Options.CursorThickness.Value then
-                        CrosshairBottom.Thickness = Options.CursorThickness.Value
+
+                    if CrosshairBottomBorder.Visible ~= Toggles.BCursorBorder.Value then
+                        CrosshairBottomBorder.Visible = Toggles.BCursorBorder.Value
                     end
             
-                    if CrosshairBottomBorder.Color ~= Options.ColorCursorBorder.Value then
-                        CrosshairBottomBorder.Color = Options.ColorCursorBorder.Value
+                    if CrosshairBottom.Thickness ~= Options.BCursorThickness.Value then
+                        CrosshairBottom.Thickness = Options.BCursorThickness.Value
                     end
             
-                    if CrosshairBottomBorder.Thickness ~= Options.CursorThickness.Value + 2 then
-                        CrosshairBottomBorder.Thickness = Options.CursorThickness.Value + 2
+                    if CrosshairBottomBorder.Color ~= Options.BColorCursorBorder.Value then
+                        CrosshairBottomBorder.Color = Options.BColorCursorBorder.Value
                     end
-                    
-                    if Toggles.CursorSpin.Value then
-                        CrosshairLeft.From = CrosshairPos + (Vector2.new(math.cos(currentAngle), math.sin(currentAngle)) * Options.CursorGap.Value)
-                    
-                        CrosshairLeft.To = CrosshairLeft.From + (Vector2.new(math.cos(currentAngle), math.sin(currentAngle)) * Options.CursorSize.Value)
             
-                        CrosshairLeftBorder.From = CrosshairPos + (Vector2.new(math.cos(currentAngle - 0.01), math.sin(currentAngle - 0.01)) * (Options.CursorGap.Value - 1))
-                    
-                        CrosshairLeftBorder.To = CrosshairLeftBorder.From + (Vector2.new(math.cos(currentAngle - 0.01), math.sin(currentAngle - 0.01)) * (Options.CursorSize.Value + 2))
-            
-                        CrosshairRight.From = CrosshairPos + (Vector2.new(math.cos(currentAngle + math.pi / 2), math.sin(currentAngle + math.pi / 2)) * Options.CursorGap.Value)
-                    
-                        CrosshairRight.To = CrosshairRight.From + (Vector2.new(math.cos(currentAngle + math.pi / 2), math.sin(currentAngle + math.pi / 2)) * Options.CursorSize.Value)
-            
-                        CrosshairRightBorder.From = CrosshairPos + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2), math.sin(((currentAngle) - 0.01) + math.pi / 2)) * (Options.CursorGap.Value - 1))
-                    
-                        CrosshairRightBorder.To = CrosshairRightBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2), math.sin(((currentAngle) - 0.01) + math.pi / 2)) * (Options.CursorSize.Value + 2))
-            
-                        CrosshairTop.From = CrosshairPos + (Vector2.new(math.cos(currentAngle + math.pi), math.sin(currentAngle + math.pi)) * Options.CursorGap.Value)
-                    
-                        CrosshairTop.To = CrosshairTop.From + (Vector2.new(math.cos(currentAngle + math.pi), math.sin(currentAngle + math.pi)) * Options.CursorSize.Value)
-            
-                        CrosshairTopBorder.From = CrosshairPos + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi), math.sin(((currentAngle) - 0.01) + math.pi)) * (Options.CursorGap.Value - 1))
-                    
-                        CrosshairTopBorder.To = CrosshairTopBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi), math.sin(((currentAngle) - 0.01) + math.pi)) * (Options.CursorSize.Value + 2))
-            
-                        CrosshairBottom.From = CrosshairPos + (Vector2.new(math.cos(currentAngle + math.pi / 2 * 3), math.sin(currentAngle + math.pi / 2 * 3)) * Options.CursorGap.Value)
-                    
-                        CrosshairBottom.To = CrosshairBottom.From + (Vector2.new(math.cos(currentAngle + math.pi / 2 * 3), math.sin(currentAngle + math.pi / 2 * 3)) * Options.CursorSize.Value)
-            
-                        CrosshairBottomBorder.From = CrosshairPos + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2 * 3), math.sin(((currentAngle) - 0.01) + math.pi / 2 * 3)) * (Options.CursorGap.Value - 1))
-                    
-                        CrosshairBottomBorder.To = CrosshairBottomBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2 * 3), math.sin(((currentAngle) - 0.01) + math.pi / 2 * 3)) * (Options.CursorSize.Value + 2))
+                    if CrosshairBottomBorder.Thickness ~= Options.BCursorThickness.Value + 2 then
+                        CrosshairBottomBorder.Thickness = Options.BCursorThickness.Value + 2
+                    end
+
+                    if Toggles.BCursorBarrel.Value and game_client.LocalPlayer.isAlive() and weapon._barrelPart ~= nil and weapon then
+                        local hit, hitpos, normal
+
+                        if game_client.character_interface.getCharacterObject()._zoommodspring._p1 == 0 then
+                            hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon._barrelPart.Position, weapon._barrelPart.Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        else
+                            hit, hitpos, normal = workspace:FindPartOnRayWithIgnoreList(Ray.new(weapon:getWeaponPart(weapon:getWeaponData().sight).Position, weapon:getWeaponPart(weapon:getWeaponData().sight).Parent.Trigger.CFrame.LookVector * 100), { workspace.Ignore, Camera }, false, true)	
+                        end
+                        local nigga = Camera:WorldToViewportPoint(hitpos + normal * 0.01)
+    
+                        Crosshair.BottomP = Vector2.new(nigga.x, nigga.y)
                     else
-                        if CrosshairLeft.From ~= Vector2.new(CrosshairPos.x - Options.CursorGap.Value - Options.CursorSize.Value, CrosshairPos.y) then
-                            CrosshairLeft.From = Vector2.new(CrosshairPos.x - Options.CursorGap.Value - Options.CursorSize.Value, CrosshairPos.y)
+                        Crosshair.BottomP = ScreenSize / 2
+                    end
+
+                    if Toggles.CursorSpin.Value then
+                        CrosshairBottom.From = Crosshair.BottomP + (Vector2.new(math.cos(currentAngle + math.pi / 2 * 3), math.sin(currentAngle + math.pi / 2 * 3)) * Crosshair.BottomD)
+                    
+                        CrosshairBottom.To = CrosshairBottom.From + (Vector2.new(math.cos(currentAngle + math.pi / 2 * 3), math.sin(currentAngle + math.pi / 2 * 3)) * Options.BCursorSize.Value)
+            
+                        CrosshairBottomBorder.From = Crosshair.BottomP + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2 * 3), math.sin(((currentAngle) - 0.01) + math.pi / 2 * 3)) * (Crosshair.BottomD - 1))
+                    
+                        CrosshairBottomBorder.To = CrosshairBottomBorder.From + (Vector2.new(math.cos(((currentAngle) - 0.01) + math.pi / 2 * 3), math.sin(((currentAngle) - 0.01) + math.pi / 2 * 3)) * (Options.BCursorSize.Value + 2))
+                    else
+                        if CrosshairBottom.From ~= Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + Options.BCursorSize.Value + 1) then
+                            CrosshairBottom.From = Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + Options.BCursorSize.Value + 1)
                         end
                     
-                        if CrosshairLeft.To ~= Vector2.new(CrosshairPos.x - Options.CursorGap.Value, CrosshairPos.y) then
-                            CrosshairLeft.To = Vector2.new(CrosshairPos.x - Options.CursorGap.Value, CrosshairPos.y)
+                        if CrosshairBottom.To ~= Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + 1) then
+                            CrosshairBottom.To = Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + 1)
                         end
                     
-                        if CrosshairLeftBorder.From ~= Vector2.new(CrosshairPos.x - Options.CursorGap.Value - Options.CursorSize.Value - 1, CrosshairPos.y) then
-                            CrosshairLeftBorder.From = Vector2.new(CrosshairPos.x - Options.CursorGap.Value - Options.CursorSize.Value - 1, CrosshairPos.y)
+                        if CrosshairBottomBorder.From ~= Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + Options.BCursorSize.Value + 2) then
+                            CrosshairBottomBorder.From = Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD + Options.BCursorSize.Value + 2)
                         end
                     
-                        if CrosshairLeftBorder.To ~= Vector2.new(CrosshairPos.x - Options.CursorGap.Value + 1, CrosshairPos.y) then
-                            CrosshairLeftBorder.To = Vector2.new(CrosshairPos.x - Options.CursorGap.Value + 1, CrosshairPos.y)
-                        end
-                    
-                        if CrosshairRight.From ~= Vector2.new(CrosshairPos.x + Options.CursorGap.Value + Options.CursorSize.Value + 1, CrosshairPos.y) then
-                            CrosshairRight.From = Vector2.new(CrosshairPos.x + Options.CursorGap.Value + Options.CursorSize.Value + 1, CrosshairPos.y)
-                        end
-                    
-                        if CrosshairRight.To ~= Vector2.new(CrosshairPos.x + Options.CursorGap.Value + 1, CrosshairPos.y) then
-                            CrosshairRight.To = Vector2.new(CrosshairPos.x + Options.CursorGap.Value + 1, CrosshairPos.y)
-                        end
-                    
-                        if CrosshairRightBorder.From ~= Vector2.new(CrosshairPos.x + Options.CursorGap.Value + Options.CursorSize.Value + 2, CrosshairPos.y) then
-                            CrosshairRightBorder.From = Vector2.new(CrosshairPos.x + Options.CursorGap.Value + Options.CursorSize.Value + 2, CrosshairPos.y)
-                        end
-                    
-                        if CrosshairRightBorder.To ~= Vector2.new(CrosshairPos.x + Options.CursorGap.Value, CrosshairPos.y) then
-                            CrosshairRightBorder.To = Vector2.new(CrosshairPos.x + Options.CursorGap.Value, CrosshairPos.y)
-                        end
-                    
-                        if CrosshairTop.From ~= Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value - Options.CursorSize.Value) then
-                            CrosshairTop.From = Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value - Options.CursorSize.Value)
-                        end
-                    
-                        if CrosshairTop.To ~= Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value) then
-                            CrosshairTop.To = Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value)
-                        end
-                    
-                        if CrosshairTopBorder.From ~= Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value - Options.CursorSize.Value - 1) then
-                            CrosshairTopBorder.From = Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value - Options.CursorSize.Value - 1)
-                        end
-                    
-                        if CrosshairTopBorder.To ~= Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value + 1) then
-                            CrosshairTopBorder.To = Vector2.new(CrosshairPos.x, CrosshairPos.y - Options.CursorGap.Value + 1)
-                        end
-                    
-                        if CrosshairBottom.From ~= Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + Options.CursorSize.Value + 1) then
-                            CrosshairBottom.From = Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + Options.CursorSize.Value + 1)
-                        end
-                    
-                        if CrosshairBottom.To ~= Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + 1) then
-                            CrosshairBottom.To = Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + 1)
-                        end
-                    
-                        if CrosshairBottomBorder.From ~= Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + Options.CursorSize.Value + 2) then
-                            CrosshairBottomBorder.From = Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value + Options.CursorSize.Value + 2)
-                        end
-                    
-                        if CrosshairBottomBorder.To ~= Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value) then
-                            CrosshairBottomBorder.To = Vector2.new(CrosshairPos.x, CrosshairPos.y + Options.CursorGap.Value)
+                        if CrosshairBottomBorder.To ~= Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD) then
+                            CrosshairBottomBorder.To = Vector2.new(Crosshair.BottomP.x, Crosshair.BottomP.y + Crosshair.BottomD)
                         end
                     end
                 else
-                    for i,v in pairs (Crosshair) do
-                        if v.Visible ~= false then
-                            v.Visible = false 
-                        end
+                    if CrosshairBottom.Visible ~= false then
+                        CrosshairBottom.Visible = false
                     end
-                end
-                
-                if Toggles.CursorEnabled.Value and Toggles.CursorBorder.Value and game_client.LocalPlayer.isAlive() then
-                    if CrosshairBottomBorder.Visible ~= true then
-                        CrosshairBottomBorder.Visible = true
-                    end
-                    if CrosshairTopBorder.Visible ~= true then
-                        CrosshairTopBorder.Visible = true
-                    end
-                    if CrosshairRightBorder.Visible ~= true then
-                        CrosshairRightBorder.Visible = true
-                    end
-                    if CrosshairLeftBorder.Visible ~= true then
-                        CrosshairLeftBorder.Visible = true
-                    end
-                else
+
                     if CrosshairBottomBorder.Visible ~= false then
                         CrosshairBottomBorder.Visible = false
-                    end
-                    if CrosshairTopBorder.Visible ~= false then
-                        CrosshairTopBorder.Visible = false
-                    end
-                    if CrosshairRightBorder.Visible ~= false then
-                        CrosshairRightBorder.Visible = false
-                    end
-                    if CrosshairLeftBorder.Visible ~= false then
-                        CrosshairLeftBorder.Visible = false
                     end
                 end
 
@@ -2860,7 +3020,7 @@ do
                 end
                 
                 if game_client.LocalPlayer.isAlive() and Toggles.ExtraGunSound.Value and curgun <= 2 then
-                    game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.firesoundid = "rbxassetid://"
+                    weapon._weaponData.firesoundid = "rbxassetid://"
                 end
 
                 Watermark.Text.Text = textboxtriggers(Options.WatermarkText.Value)
@@ -3290,12 +3450,13 @@ do
 
             game_client.firearm_object.walkSway = function(...) 
                 if Toggles.ViewModel.Value then
-                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+                    local scope = -1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5 * scope, Options.ViewModelY.Value / 2.5 * scope, Options.ViewModelZ.Value / 2.5 * scope)
 
-                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50 * scope, Options.ViewModelYaw.Value / 50 * scope, Options.ViewModelRoll.Value / 50 * scope)
 
                     if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
-                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * ((Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1))) / 12 * scope, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * ((Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1))) / 2 * scope)
                     end
 
                     return angle
@@ -3308,30 +3469,13 @@ do
 
             game_client.firearm_object.gunSway = function(...) 
                 if Toggles.ViewModel.Value then
-                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+                    local scope = -1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5 * scope, Options.ViewModelY.Value / 2.5 * scope, Options.ViewModelZ.Value / 2.5 * scope)
 
-                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
-
-                    if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
-                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
-                    end
-
-                    return angle               
-                elseif Toggles.NoSway.Value then
-                    return CFrame.new() 
-                end 
-
-                return cache.gsway(...)
-            end
-
-            game_client.firearm_object.gunSway = function(...) 
-                if Toggles.ViewModel.Value then
-                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
-
-                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50 * scope, Options.ViewModelYaw.Value / 50 * scope, Options.ViewModelRoll.Value / 50 * scope)
 
                     if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
-                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 12 * scope, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 2 * scope)
                     end
 
                     return angle               
@@ -3344,12 +3488,13 @@ do
 
             game_client.melee_object.meleeSway = function(...)
                 if Toggles.ViewModel.Value then
-                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+                    local scope = -1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5 * scope, Options.ViewModelY.Value / 2.5 * scope, Options.ViewModelZ.Value / 2.5 * scope)
 
-                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50 * scope, Options.ViewModelYaw.Value / 50 * scope, Options.ViewModelRoll.Value / 50 * scope)
 
                     if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
-                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 12 * scope, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 2 * scope)
                     end
 
                     return angle               
@@ -3362,12 +3507,13 @@ do
 
             game_client.melee_object.walkSway = function(...)
                 if Toggles.ViewModel.Value then
-                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5, Options.ViewModelY.Value / 2.5, Options.ViewModelZ.Value / 2.5)
+                    local scope = -1 * game_client.character_interface.getCharacterObject():getSpring("zoommodspring").p + 1
+                    local angle = CFrame.new(Options.ViewModelX.Value / 2.5 * scope, Options.ViewModelY.Value / 2.5 * scope, Options.ViewModelZ.Value / 2.5 * scope)
 
-                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50, Options.ViewModelYaw.Value / 50, Options.ViewModelRoll.Value / 50)
+                    angle *= CFrame.Angles(Options.ViewModelPitch.Value / 50 * scope, Options.ViewModelYaw.Value / 50 * scope, Options.ViewModelRoll.Value / 50 * scope)
 
                     if Toggles.ViewModelBob.Value and LocalPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
-                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 12, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * Options.ViewModelBobAmount.Value) / 2)
+                        angle *= CFrame.new(0, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 12 * scope, (math.sin(tick() * (Options.ViewModelBobSpeed.Value / 10)) * (Options.ViewModelBobAmount.Value / 4) * 2 * 1 * (game_client.character_interface.getCharacterObject():getSpeed() / 14 * 0.19999999999999996 * 2 + 0.8) * (game_client.character_interface.getCharacterObject():getSpring("sprintspring").p / 2 + 1)) / 2 * scope)
                     end
 
                     return angle               
@@ -3401,7 +3547,7 @@ do
                     if Toggles.IgnoreFriends.Value and table.find(Friends, tostring(args[1])) then return end
                         
                     if Toggles.HitLogs.Value then
-                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(weapon._weaponData.name)), Options.HitLogTime.Value)
                     end
                 end
 
@@ -3411,7 +3557,7 @@ do
                     if Toggles.IgnoreFriends.Value and table.find(Friends, tostring(args[1])) then return end
 
                     if Toggles.HitLogs.Value then
-                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1].Name), tostring(args[2]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1].Name), tostring(args[2]), tostring(weapon._weaponData.name)), Options.HitLogTime.Value)
                     end
                 end
 
@@ -3484,7 +3630,7 @@ do
                         elseif Options.AntiPitch.Value == "Random" then
                             AntiAimPitch = math.random(-2, 2)
                         elseif Options.AntiPitch.Value == "Sine Wave" then
-                            AntiAimPitch = math.sin(tick() * Options.AntiSineWave.Value) * 2
+                            AntiAimPitch = math.sin(tick() * Options.AntiPitchSineWave.Value) * 2
                         elseif Options.AntiPitch.Value == "Custom" then
                             AntiAimPitch = Options.AntiCustomPitch.Value / 2
                         end
@@ -3496,7 +3642,7 @@ do
                         elseif Options.AntiYaw.Value == "Random" then
                             AntiAimYaw = math.random(99999)
                         elseif Options.AntiYaw.Value == "Sine Wave" then
-                            AntiAimYaw = math.sin(tick() * Options.AntiSineWave.Value) * 4
+                            AntiAimYaw = math.sin(tick() * Options.AntiYawSineWave.Value) * 4
                         elseif Options.AntiYaw.Value == "Custom" then
                             AntiAimYaw = Options.AntiCustomYaw.Value / 50
                         end
@@ -3545,7 +3691,7 @@ do
                     end
 
                     --[[if Toggles.HitLogs.Value then
-                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(game_client.WCI:getController()._activeWeaponRegistry[curgun]._weaponData.name)), Options.HitLogTime.Value)
+                        Library:Notify(string.format("Hit %s in the %s with a %s.", tostring(args[1]), tostring(args[3]), tostring(weapon._weaponData.name)), Options.HitLogTime.Value)
                     end]]
                 end
         

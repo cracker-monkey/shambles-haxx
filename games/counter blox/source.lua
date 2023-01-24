@@ -143,9 +143,34 @@ function icons()
     end
 
     return icons;
-end 
+end
 
-do -- Menu things
+function sounds()
+    local list = listfiles("shambles haxx/Configs/sounds")
+
+    local sounds = {}
+    for i = 1, #list do
+        local file = list[i]
+        if file:sub(-4) == '.mp3' or file:sub(-4) == '.wav' then
+            local pos = file:find('.mp3', 1, true) or file:find('.wav', 1, true)
+            local start = pos
+
+            local char = file:sub(pos, pos)
+            while char ~= '/' and char ~= '\\' and char ~= '' do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+
+            if char == '/' or char == '\\' then
+                table.insert(sounds, file:sub(pos + 1, start - 1))
+            end
+        end
+    end
+
+    return sounds;
+end
+
+do -- Menu
     do -- Rage Tab
         local RageBot = Tabs.Rage:AddLeftGroupbox("Rage Bot") do
             RageBot:AddToggle('RageEnabled', {Text = 'Enabled'}):AddKeyPicker('RageKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Rage Bot', NoUI = false})
@@ -219,6 +244,18 @@ do -- Menu things
     end
 
     do -- Misc Tab
+        local Main = Tabs.Misc:AddLeftGroupbox('Main') do
+            Main:AddToggle('HitSound', {Text = 'Hit Sound'})
+            Main:AddSlider('HitsoundVolume', {Text = 'Hit Sound Volume', Default = 50, Min = 1, Max = 100, Rounding = 0})
+            Main:AddSlider('HitsoundPitch', {Text = 'Hit Sound Pitch', Default = 100, Min = 1, Max = 300, Rounding = 0})
+            Main:AddDropdown('HitsoundId', {Values = sounds(), Default = 1, Multi = false, Text = 'Hit Sound'})
+            Main:AddButton('Refresh', function()
+                Options.HitsoundId.Values = sounds()
+                Options.HitsoundId:SetValues()
+                Options.HitsoundId:SetValue()
+            end)
+        end
+        
         local Movement = Tabs.Misc:AddLeftGroupbox('Movement') do
             Movement:AddToggle('MovementSpeed', {Text = 'Speed'}):AddKeyPicker('MovementSpeedKey', {Default = '', SyncToggleState = false, Mode = 'Toggle', Text = 'Speed', NoUI = false})
             Movement:AddSlider('MovementSpeedAmount', {Text = 'Speed Amount', Default = 60, Min = 1, Max = 500, Rounding = 0})
@@ -1183,7 +1220,7 @@ do -- Modules
                             return
                         end
 
-                        --[[if Toggles.RageForwardTrack.Value then
+                        if Toggles.RageForwardTrack.Value then
                             local vel = character.HumanoidRootPart.Velocity
                             local amount = Options.RageForwardTrackAmount.Value / 1000
                             local vect = vel * amount
@@ -1195,41 +1232,42 @@ do -- Modules
                                 client.firebullet()
                                 HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
                             end
-                        else]]
-                            --client.firebullet()
-                            --HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
-                        --end
+                        else
+                            client.firebullet()
+                            HitPart:FireServer(unpack(hitpart_args(character.Head, character.Head.Position, 2)))
+                        end
                     end
                 end
             end
         end))
     end
 
-    local mt = getrawmetatable(game) 
-	local oldNamecall = mt.__namecall 
-	local oldIndex = mt.__index 
-	local oldNewIndex = mt.__newindex 
-	setreadonly(mt,false) 
-	mt.__namecall = function(self, ...)
-		local method = tostring(getnamecallmethod())
-		local args = {...} 
+    do -- Hooks
+        local mt = getrawmetatable(game) 
+        local oldNamecall = mt.__namecall 
+        local oldIndex = mt.__index 
+        local oldNewIndex = mt.__newindex 
+        setreadonly(mt,false) 
+        mt.__namecall = function(self, ...)
+            local method = tostring(getnamecallmethod())
+            local args = {...} 
 
-        if method == "FireServer" and self.Name == "HitPart" then 
-			if rtar ~= nil then
-				-- Stolen pred from J's dms. <3
-				coroutine.wrap(function()
-					if Players:GetPlayerFromCharacter(args[1].Parent) or args[1] == rtar then 
-						local RootPart = rtar.Parent.HumanoidRootPart.Position
-						local OldRootPart = rtar.Parent.HumanoidRootPart.OldPosition.Value
-						local Velocity = (Vector3.new(RootPart.X, 0, RootPart.Z) - Vector3.new(OldRootPart.X, 0, OldRootPart.Z)) / LastStep
-						local Direction = Vector3.new(Velocity.X / Velocity.magnitude, 0, Velocity.Z / Velocity.magnitude)
-						args[2] = args[2] + Direction * (game.Stats.PerformanceStats.Ping:GetValue() / (math.pow(game.Stats.PerformanceStats.Ping:GetValue(), (1.5))) * (Direction / (Direction / 2)))
-						args[12] = args[12] - 500	
-					end
-				end)()
-			end
-		end
+            if method == "FireServer" and self.Name == "HitPart" then 
+                if rtar ~= nil then
+                    coroutine.wrap(function()
+                        if Players:GetPlayerFromCharacter(args[1].Parent) or args[1] == rtar then 
+                            local RootPart = rtar.Parent.HumanoidRootPart.Position
+                            local OldRootPart = rtar.Parent.HumanoidRootPart.OldPosition.Value
+                            local Velocity = (Vector3.new(RootPart.X, 0, RootPart.Z) - Vector3.new(OldRootPart.X, 0, OldRootPart.Z)) / LastStep
+                            local Direction = Vector3.new(Velocity.X / Velocity.magnitude, 0, Velocity.Z / Velocity.magnitude)
+                            args[2] = args[2] + Direction * (game.Stats.PerformanceStats.Ping:GetValue() / (math.pow(game.Stats.PerformanceStats.Ping:GetValue(), (1.5))) * (Direction / (Direction / 2)))
+                            args[12] = args[12] - 500	
+                        end
+                    end)()
+                end
+            end
 
-        return oldNamecall(self, unpack(args)) 
-	end
+            return oldNamecall(self, unpack(args)) 
+        end
+    end
 end
